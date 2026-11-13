@@ -1,0 +1,278 @@
+/* ===== Duplify – Design-Grundlagen ===== */
+:root {
+  --sky-top: #74c4ff;
+  --sky-bottom: #dff4ff;
+  --ink: #22324d;
+  --ink-soft: #4b5d7a;
+  --card: #ffffff;
+  --card-shadow: 0 10px 30px rgba(34, 50, 77, 0.16);
+
+  --red: #ff5b4f;
+  --red-dark: #cf3a30;
+  --yellow: #ffcb3d;
+  --yellow-dark: #d9a20c;
+  --green: #46c46c;
+  --green-dark: #2a984d;
+  --blue: #3f8cff;
+  --blue-dark: #2563d0;
+  --purple: #9a6bff;
+  --purple-dark: #7044d6;
+  --orange: #ff9b3d;
+  --orange-dark: #d8761c;
+  --pink: #ff7eb6;
+  --pink-dark: #d8538f;
+
+  --radius: 26px;
+  --radius-s: 16px;
+  --font: 'Fredoka Variable', 'Fredoka', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 70%, #f4fbff 100%);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+canvas {
+  touch-action: none;
+  display: block;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: calc(14px + var(--safe-top)) calc(16px + var(--safe-right)) calc(14px + var(--safe-bottom))
+    calc(16px + var(--safe-left));
+}
+
+.scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+/* ===== Wolken im Hintergrund ===== */
+.clouds {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.cloud {
+  position: absolute;
+  background: #fff;
+  border-radius: 999px;
+  opacity: 0.85;
+  filter: drop-shadow(0 6px 10px rgba(80, 140, 200, 0.18));
+  animation: cloud-drift linear infinite;
+}
+.cloud::before,
+.cloud::after {
+  content: '';
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+}
+.cloud::before {
+  width: 55%;
+  height: 160%;
+  left: 14%;
+  bottom: 20%;
+}
+.cloud::after {
+  width: 40%;
+  height: 120%;
+  right: 12%;
+  bottom: 25%;
+}
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-30vw);
+  }
+  to {
+    transform: translateX(130vw);
+  }
+}
+
+/* ===== Baustein-Knopf ===== */
+.brick-btn {
+  --c: var(--red);
+  --c-dark: var(--red-dark);
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 76px;
+  min-height: 76px;
+  padding: 16px 22px;
+  margin-top: 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 88%, #fff) 0%, var(--c) 60%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.35rem;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 10px 0 var(--c-dark),
+    0 16px 24px rgba(20, 40, 80, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.45);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out;
+}
+.brick-btn:active,
+.brick-btn.pressed {
+  transform: translateY(8px);
+  box-shadow:
+    0 2px 0 var(--c-dark),
+    0 5px 10px rgba(20, 40, 80, 0.25),
+    inset 0 2px 0 rgba(255, 255, 255, 0.45);
+}
+.brick-btn:disabled {
+  filter: grayscale(0.7) brightness(1.05);
+  opacity: 0.55;
+}
+.brick-btn .studs {
+  position: absolute;
+  top: -11px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-evenly;
+  pointer-events: none;
+}
+.brick-btn .stud {
+  width: clamp(16px, 18%, 36px);
+  height: 14px;
+  border-radius: 10px 10px 4px 4px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 70%, #fff) 0%, var(--c) 100%);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+}
+.brick-btn .icon {
+  font-size: 2.4em;
+  line-height: 1;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.12));
+}
+
+.c-red {
+  --c: var(--red);
+  --c-dark: var(--red-dark);
+}
+.c-yellow {
+  --c: var(--yellow);
+  --c-dark: var(--yellow-dark);
+}
+.c-green {
+  --c: var(--green);
+  --c-dark: var(--green-dark);
+}
+.c-blue {
+  --c: var(--blue);
+  --c-dark: var(--blue-dark);
+}
+.c-purple {
+  --c: var(--purple);
+  --c-dark: var(--purple-dark);
+}
+.c-orange {
+  --c: var(--orange);
+  --c-dark: var(--orange-dark);
+}
+.c-pink {
+  --c: var(--pink);
+  --c-dark: var(--pink-dark);
+}
+.c-white {
+  --c: #ffffff;
+  --c-dark: #c9d6e6;
+  color: var(--ink) !important;
+  text-shadow: none !important;
+}
+
+/* ===== Karten ===== */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+}
+
+/* ===== Hilfsklassen ===== */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.grow {
+  flex: 1;
+}
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.title {
+  font-weight: 700;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  letter-spacing: 0.01em;
+  text-shadow: 0 3px 0 rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+.subtle {
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud {
+    animation: none;
+  }
+}
