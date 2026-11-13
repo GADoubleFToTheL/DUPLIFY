@@ -190,15 +190,15 @@ function buildBody(def: PartDef, color: ColorId | null, opts: PartObjectOptions,
 }
 
 function buildFlower(g: THREE.Group, color: ColorId | null, ghostMode: boolean, phase: number) {
-  const base = mesh(boxGeometry(1.86, 0.22, 1.86, 0.08), ghostMode ? ghost('gruen') : MAT.leaf());
-  base.position.y = 0.11;
+  const base = mesh(boxGeometry(1.9, 0.2, 1.9, 0.08), ghostMode ? ghost('gruen') : MAT.leaf());
+  base.position.y = 0.38;
   g.add(base);
   const stem = new THREE.Group();
-  stem.position.y = 0.2;
+  stem.position.y = 0.42;
   tag(stem, 'sway', phase);
   g.add(stem);
-  const stalk = mesh(cylinderGeometry(0.07, 0.08, 0.95, 10), ghostMode ? ghost('gruen') : MAT.stem());
-  stalk.position.y = 0.47;
+  const stalk = mesh(cylinderGeometry(0.07, 0.08, 0.8, 10), ghostMode ? ghost('gruen') : MAT.stem());
+  stalk.position.y = 0.4;
   stem.add(stalk);
   if (!ghostMode) {
     for (const sx of [-1, 1]) {
@@ -210,7 +210,7 @@ function buildFlower(g: THREE.Group, color: ColorId | null, ghostMode: boolean, 
     }
   }
   const head = new THREE.Group();
-  head.position.y = 1.12;
+  head.position.y = 0.98;
   stem.add(head);
   const petalMat = ghostMode ? ghost(color) : plastic(color);
   for (let i = 0; i < 6; i++) {

@@ -47,11 +47,12 @@ export function BuildStage({ placements, steps, phase, step, baseplate, onLanded
     animateObjects(animated, state.clock.elapsedTime, dt, phase === 'done');
   });
 
+  const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
   const goal = useMemo(
-    () => animator.cameraGoal(camera.fov),
-    // Ziel hängt nur von Phase und Schritt ab
+    () => animator.cameraGoal(camera.fov, aspect),
+    // Ziel hängt nur von Phase, Schritt und Bildformat ab
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [animator, phase, step, camera.fov],
+    [animator, phase, step, camera.fov, aspect],
   );
   const size = animator.bounds.getSize(new THREE.Vector3());
   const radius = Math.max(size.x, size.z) / 2;

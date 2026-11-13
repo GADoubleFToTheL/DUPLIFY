@@ -284,37 +284,50 @@ export class StageAnimator {
   }
 
   /** Wohin die Kamera schauen soll. */
-  cameraGoal(fov: number): CameraGoal {
+  cameraGoal(fov: number, aspect = 1.4): CameraGoal {
     const size = this.bounds.getSize(new THREE.Vector3());
     const c = this.center;
-    const radiusXZ = Math.max(size.x, size.z) / 2 + 1;
-    const tanHalf = Math.tan(THREE.MathUtils.degToRad(fov / 2));
-    const sphere = this.bounds.getBoundingSphere(new THREE.Sphere());
-    const fitAll = Math.max(8, (sphere.radius + 0.6) / Math.sin(THREE.MathUtils.degToRad(fov / 2)));
-    if (this.phase !== 'build') {
+    const tanV = Math.tan(THREE.MathUtils.degToRad(fov / 2));
+    const tanH = tanV * Math.max(0.5, aspect);
+    // Platz für Knöpfe oben/unten: nur ca. 70 % der Höhe sind frei.
+    const fitH = (size.y * 0.5 + 1.2) / (tanV * 0.7);
+    const widthXZ = Math.hypot(size.x, size.z);
+    const fitW = (widthXZ * 0.5 + 1.2) / (tanH * 0.9);
+    const fitAll = Math.max(9, fitH + widthXZ * 0.35, fitW);
+    const tall = size.y > 10 && fitH > fitW * 1.35;
+    if (this.phase !== 'build' || !tall) {
+      const key = this.phase === 'build' ? `build:${this.step}` : `${this.phase}`;
+      const focus = this.phase === 'build' ? this.stepFocus() : null;
       return {
-        key: `${this.phase}`,
-        target: new THREE.Vector3(c.x, size.y * 0.45, c.z),
+        key,
+        target: new THREE.Vector3(c.x, size.y * 0.42, c.z),
         distance: fitAll,
-        azimuth: 0.55,
-        polar: 1.12,
+        azimuth: focus ? this.pickAzimuth(new THREE.Vector3(c.x, size.y * 0.42, c.z), fitAll, 1.1, focus.center) : 0.55,
+        polar: 1.1,
       };
     }
+    // Hoher Turm: Kamera wandert mit nach oben und zeigt ein Fenster von ca. 12 Einheiten.
+    const focus = this.stepFocus();
+    const windowH = 12;
+    const distance = Math.max(fitW, (windowH * 0.5) / (tanV * 0.7));
+    const targetY = Math.max(windowH * 0.4, focus.top - windowH * 0.25);
+    const target = new THREE.Vector3(c.x, Math.min(targetY, size.y * 0.5 + 2), c.z);
+    target.y = Math.max(target.y, Math.min(focus.top - 3, size.y));
+    const polar = 1.12;
+    const azimuth = this.pickAzimuth(target, distance, polar, focus.center);
+    return { key: `build:${this.step}`, target, distance, azimuth, polar };
+  }
+
+  private stepFocus(): { center: THREE.Vector3; top: number } {
     const idx = this.steps[this.step] ?? [];
-    const focus = new THREE.Vector3();
+    const center = new THREE.Vector3();
     let top = 0;
     for (const i of idx) {
-      focus.add(this.boxes[i].getCenter(new THREE.Vector3()));
+      center.add(this.boxes[i].getCenter(new THREE.Vector3()));
       top = Math.max(top, this.boxes[i].max.y);
     }
-    if (idx.length) focus.divideScalar(idx.length);
-    const tall = size.y > 7;
-    const targetY = tall ? Math.max(1.5, top - 1.6) : Math.max(1, size.y * 0.4);
-    const target = new THREE.Vector3(c.x, targetY, c.z);
-    const distance = Math.min(fitAll, Math.max(10, (radiusXZ * 1.45) / tanHalf));
-    const polar = 1.08;
-    const azimuth = this.pickAzimuth(target, distance, polar, focus);
-    return { key: `build:${this.step}`, target, distance, azimuth, polar };
+    if (idx.length) center.divideScalar(idx.length);
+    return { center, top };
   }
 
   /** Wählt einen Blickwinkel, aus dem das neue Teil nicht verdeckt ist. */

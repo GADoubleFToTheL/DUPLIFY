@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/fredoka';
 import './ui/theme.css';
+import './ui/ui.css';
 import { App } from './App';
 import { registerServiceWorker } from './pwa';
 
