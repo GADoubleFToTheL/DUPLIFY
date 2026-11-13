@@ -284,7 +284,7 @@ export class StageAnimator {
   }
 
   /** Wohin die Kamera schauen soll. */
-  cameraGoal(fov: number, aspect = 1.4): CameraGoal {
+  cameraGoal(phase: StagePhase, step: number, fov: number, aspect = 1.4): CameraGoal {
     const size = this.bounds.getSize(new THREE.Vector3());
     const c = this.center;
     const tanV = Math.tan(THREE.MathUtils.degToRad(fov / 2));
@@ -295,31 +295,42 @@ export class StageAnimator {
     const fitW = (widthXZ * 0.5 + 1.2) / (tanH * 0.9);
     const fitAll = Math.max(9, fitH + widthXZ * 0.35, fitW);
     const tall = size.y > 10 && fitH > fitW * 1.35;
-    if (this.phase !== 'build' || !tall) {
-      const key = this.phase === 'build' ? `build:${this.step}` : `${this.phase}`;
-      const focus = this.phase === 'build' ? this.stepFocus() : null;
+    if (phase === 'done') {
+      // Unten liegt das „Super gemacht!“-Feld: Modell weiter weg und etwas höher im Bild.
+      const distance = fitAll * 1.45;
+      return {
+        key: 'done',
+        target: new THREE.Vector3(c.x, size.y * 0.42 - distance * tanV * 0.26, c.z),
+        distance,
+        azimuth: 0.55,
+        polar: 1.12,
+      };
+    }
+    if (phase !== 'build' || !tall) {
+      const key = phase === 'build' ? `build:${step}` : `${phase}`;
+      const focus = phase === 'build' ? this.stepFocus(step) : null;
       return {
         key,
         target: new THREE.Vector3(c.x, size.y * 0.42, c.z),
         distance: fitAll,
-        azimuth: focus ? this.pickAzimuth(new THREE.Vector3(c.x, size.y * 0.42, c.z), fitAll, 1.1, focus.center) : 0.55,
+        azimuth: focus ? this.pickAzimuth(step, new THREE.Vector3(c.x, size.y * 0.42, c.z), fitAll, 1.1, focus.center) : 0.55,
         polar: 1.1,
       };
     }
     // Hoher Turm: Kamera wandert mit nach oben und zeigt ein Fenster von ca. 12 Einheiten.
-    const focus = this.stepFocus();
+    const focus = this.stepFocus(step);
     const windowH = 12;
     const distance = Math.max(fitW, (windowH * 0.5) / (tanV * 0.7));
     const targetY = Math.max(windowH * 0.4, focus.top - windowH * 0.25);
     const target = new THREE.Vector3(c.x, Math.min(targetY, size.y * 0.5 + 2), c.z);
     target.y = Math.max(target.y, Math.min(focus.top - 3, size.y));
     const polar = 1.12;
-    const azimuth = this.pickAzimuth(target, distance, polar, focus.center);
-    return { key: `build:${this.step}`, target, distance, azimuth, polar };
+    const azimuth = this.pickAzimuth(step, target, distance, polar, focus.center);
+    return { key: `build:${step}`, target, distance, azimuth, polar };
   }
 
-  private stepFocus(): { center: THREE.Vector3; top: number } {
-    const idx = this.steps[this.step] ?? [];
+  private stepFocus(step: number): { center: THREE.Vector3; top: number } {
+    const idx = this.steps[step] ?? [];
     const center = new THREE.Vector3();
     let top = 0;
     for (const i of idx) {
@@ -331,8 +342,8 @@ export class StageAnimator {
   }
 
   /** Wählt einen Blickwinkel, aus dem das neue Teil nicht verdeckt ist. */
-  private pickAzimuth(target: THREE.Vector3, distance: number, polar: number, focus: THREE.Vector3): number {
-    const placed = this.boxes.filter((_, i) => this.stepOf[i] < this.step);
+  private pickAzimuth(step: number, target: THREE.Vector3, distance: number, polar: number, focus: THREE.Vector3): number {
+    const placed = this.boxes.filter((_, i) => this.stepOf[i] < step);
     const blocked = (az: number) => {
       const camPos = new THREE.Vector3(
         target.x + distance * Math.sin(polar) * Math.sin(az),

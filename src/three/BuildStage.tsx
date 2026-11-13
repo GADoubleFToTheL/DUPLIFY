@@ -49,9 +49,7 @@ export function BuildStage({ placements, steps, phase, step, baseplate, onLanded
 
   const aspect = useThree((s) => s.size.width / Math.max(1, s.size.height));
   const goal = useMemo(
-    () => animator.cameraGoal(camera.fov, aspect),
-    // Ziel hängt nur von Phase, Schritt und Bildformat ab
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    () => animator.cameraGoal(phase, step, camera.fov, aspect),
     [animator, phase, step, camera.fov, aspect],
   );
   const size = animator.bounds.getSize(new THREE.Vector3());

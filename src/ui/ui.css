@@ -1173,3 +1173,103 @@
 .switch.on .knob {
   transform: translateX(28px);
 }
+
+/* ===== Meine Bauwerke ===== */
+.gallery-card .idea-thumb {
+  position: relative;
+}
+.gallery-photo {
+  object-fit: cover !important;
+  animation: none !important;
+}
+.gallery-inset {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 34% !important;
+  height: 34% !important;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  animation: none !important;
+}
+.gallery-sticker {
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  font-size: 2rem;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.2));
+}
+.sticker-album {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.album-sticker {
+  font-size: 2rem;
+  animation: card-in 0.4s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+.album-sticker:active {
+  transform: scale(1.3) rotate(-10deg);
+}
+.album-count {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.modal {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(20, 40, 70, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.modal-card {
+  position: relative;
+  width: min(640px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 18px;
+  text-align: center;
+  display: grid;
+  gap: 6px;
+  animation: card-in 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.modal-close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #eef3f9;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+.detail-images {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+.detail-photo {
+  max-width: 60%;
+  max-height: 46vh;
+  border-radius: 18px;
+  object-fit: cover;
+}
+.detail-thumb {
+  width: 240px;
+  max-width: 40%;
+}
+.detail-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
