@@ -1,17 +1,19 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Route, Router, Switch } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
 import { setSoundEnabled, unlockAudio } from './audio/sfx';
 import { setVoiceEnabled } from './audio/voice';
 import { useSettings } from './state/settingsStore';
 import { Build } from './ui/screens/Build';
-import { DevBuild } from './ui/screens/dev/DevBuild';
-import { DevParts } from './ui/screens/dev/DevParts';
-import { DevRecipes } from './ui/screens/dev/DevRecipes';
 import { Gallery } from './ui/screens/Gallery';
 import { Home } from './ui/screens/Home';
 import { Ideas } from './ui/screens/Ideas';
 import { ParentArea } from './ui/screens/parent/ParentArea';
+
+// Entwickler-Seiten nur bei Bedarf laden
+const DevParts = lazy(() => import('./ui/screens/dev/DevParts').then((m) => ({ default: m.DevParts })));
+const DevBuild = lazy(() => import('./ui/screens/dev/DevBuild').then((m) => ({ default: m.DevBuild })));
+const DevRecipes = lazy(() => import('./ui/screens/dev/DevRecipes').then((m) => ({ default: m.DevRecipes })));
 
 export function App() {
   const sound = useSettings((s) => s.sound);
@@ -27,6 +29,7 @@ export function App() {
 
   return (
     <Router hook={useHashLocation}>
+      <Suspense fallback={null}>
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/ideen" component={Ideas} />
@@ -38,6 +41,7 @@ export function App() {
         <Route path="/dev/rezepte" component={DevRecipes} />
         <Route component={Home} />
       </Switch>
+      </Suspense>
     </Router>
   );
 }

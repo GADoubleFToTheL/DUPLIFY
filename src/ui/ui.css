@@ -1273,3 +1273,41 @@
   font-size: 1.6rem;
   font-weight: 700;
 }
+
+/* ===== Handy-Feinschliff ===== */
+@media (max-width: 700px) {
+  .topbar .title {
+    font-size: 1.35rem;
+  }
+  .topbar .brick-btn.size-s .label {
+    display: none;
+  }
+  .ideas-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .idea-card {
+    padding: 8px;
+  }
+  .idea-name {
+    font-size: 1.02rem;
+  }
+  .size-slider {
+    padding: 8px 12px 10px;
+  }
+  .size-towers {
+    gap: 6px;
+  }
+  .chip {
+    min-width: 62px;
+    padding: 6px 8px;
+  }
+  .chip-emoji {
+    font-size: 1.6rem;
+  }
+  .logo-letter {
+    width: 34px;
+    height: 40px;
+    font-size: 1.35rem;
+  }
+}
