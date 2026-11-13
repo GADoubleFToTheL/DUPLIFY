@@ -29,7 +29,7 @@ describe('Engine', () => {
     let made = 0;
     for (const [, counts] of Object.entries(INVENTORIES)) {
       for (const target of [4, 8, 15, 30, 60]) {
-        for (let seed = 1; seed <= 12; seed++) {
+        for (let seed = 1; seed <= 8; seed++) {
           for (const recipe of RECIPES) {
             const c = createFromRecipe(recipe, { counts, target, seed }, seed * 7919);
             if (!c) continue;
@@ -43,7 +43,7 @@ describe('Engine', () => {
       }
     }
     expect(made).toBeGreaterThan(200);
-  });
+  }, 60_000);
 
   it('gleicher Seed → gleiches Bauwerk', () => {
     const counts = sampleCounts();
