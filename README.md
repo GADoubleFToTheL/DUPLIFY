@@ -51,28 +51,30 @@ Eine fröhliche Web-App für kleine Baumeister: Ihr tragt eure großen Bausteine
 
 ## Auf dem iPad oder Handy benutzen
 
-Die App ist eine **Web-App (PWA)**. Sie braucht keinen App Store, aber einmal eine Adresse im Internet (HTTPS).
+Die App ist eine **Web-App (PWA)**: kein App Store nötig. Sie wird automatisch auf **GitHub Pages** veröffentlicht:
 
-1. **Hosten** – Das Repo ist privat, deshalb empfehlen wir eins dieser kostenlosen Angebote:
-   - **Netlify:** „Add new site“ → „Import from Git“ → Repo wählen.
-     - Build command `npm run build`
-     - Publish directory `dist`
-   - **Cloudflare Pages:** „Create“ → „Pages“ → Repo verbinden.
-     - Build command `npm run build`
-     - Output `dist`
+**https://gadoubleftothel.github.io/DUPLIFY/**
 
-   Die App nutzt relative Pfade und läuft deshalb auch in Unterordnern.
-2. **Installieren:**
+1. **Öffnen und installieren:**
    - iPad/iPhone: die Adresse in Safari öffnen → Teilen → **„Zum Home-Bildschirm“**.
    - Android: in Chrome → Menü → „App installieren“.
-3. **Loslegen:**
+2. **Loslegen:**
    1. Das Schloss oben rechts 3 Sekunden halten.
    2. In der **Steine-Kiste** eure Steine eintragen (oder erst die **Beispiel-Kiste** ausprobieren).
    3. Zurück zum Start und auf „Bauen“ tippen.
 
+Jeder Push auf den Branch `claude/exciting-newton-9ub33j` (oder `main`) baut die App neu und veröffentlicht sie; das erledigt der Workflow `.github/workflows/pages.yml`. Die App holt sich die neue Version beim nächsten Öffnen.
+
+Einmalig nötig auf GitHub:
+- Das Repo muss **öffentlich** sein (Settings → General → Change visibility).
+- Unter Settings → **Pages** muss die Quelle auf **GitHub Actions** stehen.
+
+Soll das Repo privat bleiben, geht es alternativ kostenlos über Netlify: Repo verbinden, die Einstellungen kommen aus `netlify.toml`.
+
 Tipps:
 - Ton und Stimme lassen sich in den Einstellungen abschalten.
 - Mit einer **Grundplatte** (Einstellungen) kann nichts umkippen.
+- Auf dem iPhone schaltet der Stumm-Schalter die Töne ab.
 
 ## Entwicklung
 
