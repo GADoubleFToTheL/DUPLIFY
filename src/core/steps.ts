@@ -3,7 +3,8 @@ import { analyze, columnStacks } from './validate';
 import type { Placement } from './types';
 
 /**
- * Bau-Reihenfolge: erst nach Höhe, dann hinten → vorne, links → rechts, Deko möglichst zuletzt.
+ * Bau-Reihenfolge: Ein Teilbauwerk nach dem anderen (links → rechts), darin von unten nach oben,
+ * hinten → vorne, links → rechts und Deko zuletzt.
  * Garantiert: Jedes Teil steht auf schon gebauten Teilen und kein schon gebautes Teil
  * versperrt den Weg von oben.
  */
@@ -20,8 +21,34 @@ export function buildOrder(placements: readonly Placement[]): number[] {
     }
   }
 
+  // Teilbauwerke (zusammenhängende Gruppen) bestimmen und von links nach rechts sortieren.
+  const parent = placements.map((_, i) => i);
+  const find = (i: number): number => {
+    while (parent[i] !== i) {
+      parent[i] = parent[parent[i]];
+      i = parent[i];
+    }
+    return i;
+  };
+  before.forEach((s, i) => s.forEach((j) => (parent[find(i)] = find(j))));
+  const compMin = new Map<number, [number, number]>();
+  placements.forEach((p, i) => {
+    const r = find(i);
+    const cur = compMin.get(r);
+    if (!cur || p.x < cur[0] || (p.x === cur[0] && p.z < cur[1])) compMin.set(r, [p.x, p.z]);
+  });
+  const ranked = [...compMin.entries()].sort((a, b) => a[1][0] - b[1][0] || a[1][1] - b[1][1]);
+  const rank = new Map(ranked.map(([r], k) => [r, k]));
+
   const isDeco = placements.map((p) => (getPart(p.part).kind === 'deco' && !getPart(p.part).groundOnly ? 1 : 0));
-  const key = (i: number): number[] => [isDeco[i], placements[i].y, placements[i].z, placements[i].x, i];
+  const key = (i: number): number[] => [
+    rank.get(find(i))!,
+    isDeco[i],
+    placements[i].y,
+    placements[i].z,
+    placements[i].x,
+    i,
+  ];
   const less = (a: number[], b: number[]) => {
     for (let k = 0; k < a.length; k++) if (a[k] !== b[k]) return a[k] < b[k];
     return false;

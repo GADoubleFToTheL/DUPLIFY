@@ -142,10 +142,10 @@ describe('Validierung', () => {
 });
 
 describe('Bau-Reihenfolge', () => {
-  it('baut von unten nach oben, hinten nach vorne', () => {
+  it('baut ein Teilbauwerk nach dem anderen, jeweils von unten nach oben', () => {
     const ps = [P('brick-2x4', 0, 2, 0), P('brick-2x4', 0, 0, 2), P('brick-2x4', 0, 0, 0)];
     const order = buildOrder(ps);
-    expect(order).toEqual([2, 1, 0]);
+    expect(order).toEqual([2, 0, 1]);
     expect(isBuildableOrder(ps, order)).toBe(true);
   });
 
@@ -157,9 +157,13 @@ describe('Bau-Reihenfolge', () => {
       P('brick-2x4', 4, 0, 0),
     ];
     const order = buildOrder(ps);
-    expect(order.indexOf(1)).toBeLessThan(order.indexOf(0));
-    expect(order[order.length - 1]).toBe(2);
+    expect(order).toEqual([1, 0, 2, 3]);
     expect(isBuildableOrder(ps, order)).toBe(true);
+  });
+
+  it('Deko kommt innerhalb eines Bauwerks zuletzt', () => {
+    const ps = [P('brick-2x4', 0, 0, 0), P('flower', 0, 2, 0), P('brick-2x2', 2, 2, 0), P('brick-2x2', 2, 4, 0)];
+    expect(buildOrder(ps)).toEqual([0, 2, 3, 1]);
   });
 
   it('gruppiert Schichten', () => {
