@@ -1,0 +1,13 @@
+# Einstellungen für Netlify (kostenloses Hosting) – werden automatisch übernommen.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Den Service Worker nie aus dem Cache liefern, damit Updates schnell ankommen.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
