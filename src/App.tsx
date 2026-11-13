@@ -7,6 +7,7 @@ import { useSettings } from './state/settingsStore';
 import { Build } from './ui/screens/Build';
 import { DevBuild } from './ui/screens/dev/DevBuild';
 import { DevParts } from './ui/screens/dev/DevParts';
+import { DevRecipes } from './ui/screens/dev/DevRecipes';
 import { Gallery } from './ui/screens/Gallery';
 import { Home } from './ui/screens/Home';
 import { Ideas } from './ui/screens/Ideas';
@@ -34,6 +35,7 @@ export function App() {
         <Route path="/eltern" nest component={ParentArea} />
         <Route path="/dev/teile" component={DevParts} />
         <Route path="/dev/bauen" component={DevBuild} />
+        <Route path="/dev/rezepte" component={DevRecipes} />
         <Route component={Home} />
       </Switch>
     </Router>

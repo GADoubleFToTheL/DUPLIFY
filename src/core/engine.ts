@@ -55,7 +55,8 @@ export function createFromRecipe(recipe: Recipe, req: IdeaRequest, seed: number)
     if (!draft.anySize && Math.abs(draft.placements.length - ctx.target) > sizeTolerance(ctx.target)) continue;
     const placed = centerPlacements(draft.placements);
     if (!isValid(placed, { baseplate })) continue;
-    const colored = colorize(placed, draft.roles, req, rng, baseplate);
+    const maxCount = draft.anySize ? Infinity : ctx.target + sizeTolerance(ctx.target);
+    const colored = colorize(placed, draft.roles, req, rng, baseplate, maxCount);
     if (!colored) continue;
     // Durch Zerlegen können Teile dazukommen – Größe nochmal prüfen.
     if (!draft.anySize && Math.abs(colored.length - ctx.target) > sizeTolerance(ctx.target)) continue;
@@ -86,6 +87,7 @@ function colorize(
   req: IdeaRequest,
   rng: Rng,
   baseplate: boolean,
+  maxCount = Infinity,
 ): Placement[] | null {
   let current = placements;
   let currentRoles = roles.slice();
@@ -98,7 +100,7 @@ function colorize(
     if (!splitTried.has(failed)) {
       splitTried.add(failed);
       const split = splitRole(current, failed);
-      if (split.length !== current.length && isValid(split, { baseplate })) {
+      if (split.length !== current.length && split.length <= maxCount && isValid(split, { baseplate })) {
         current = split;
         continue;
       }
