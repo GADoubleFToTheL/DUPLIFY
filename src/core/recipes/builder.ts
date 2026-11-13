@@ -39,6 +39,11 @@ export class ShapeBudget {
   clone(): ShapeBudget {
     return new ShapeBudget(this.left);
   }
+
+  /** Vorhandene eigene Teile (IDs). */
+  customParts(): PartId[] {
+    return [...this.left.entries()].filter(([k, n]) => k.startsWith('custom-') && n > 0).map(([k]) => k);
+  }
 }
 
 /** Stein-Längen für 2 Noppen breite Streifen (Teil-ID je Länge). */
@@ -231,4 +236,20 @@ function centerOf(cols: Set<string>): [number, number] {
     sz += z + 0.5;
   }
   return [sx / cols.size, sz / cols.size];
+}
+
+/** Setzt eine Deko (Figur, Blume, Tier oder eigenes Teil) oben auf das Bauwerk. */
+export function placeTopper(
+  b: Builder,
+  rng: { shuffle<T>(items: readonly T[]): T[] },
+  opts: { near?: [number, number]; y?: number; options?: PartId[] } = {},
+): PartId | null {
+  const options = rng.shuffle([...(opts.options ?? ['figure', 'flower', 'animal']), ...b.budget.customParts()]);
+  for (const part of options) {
+    if (!b.has(part)) continue;
+    const def = getPart(part);
+    const color = def.colorable ? undefined : null;
+    if (b.placeOn(part, 'deko', { near: opts.near, y: opts.y, color })) return part;
+  }
+  return null;
 }

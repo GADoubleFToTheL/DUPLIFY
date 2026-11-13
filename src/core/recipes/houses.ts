@@ -1,5 +1,5 @@
 import type { RoleDef } from '../types';
-import { Builder, topColors } from './builder';
+import { Builder, placeTopper, topColors } from './builder';
 import type { Recipe, RecipeContext } from './types';
 
 const WALL_PARTS = ['brick-2x2', 'brick-2x4', 'brick-2x6', 'brick-2x8'];
@@ -102,9 +102,7 @@ export const skyscraper: Recipe = {
     const topY = roofY + 2;
     const pitched = pitchedRoof(b, topY);
     if (!pitched && !flatRoof(b, topY)) return null;
-    for (const part of ctx.rng.shuffle(['figure', 'flower'])) {
-      if (b.has(part) && b.placeOn(part, 'deko', { color: part === 'figure' ? null : undefined })) break;
-    }
+    placeTopper(b, ctx.rng, { options: ['figure', 'flower'] });
     return {
       placements: b.placements,
       roles: [

@@ -1,6 +1,6 @@
 import { RAINBOW } from '../colors';
 import type { Rot, RoleDef } from '../types';
-import { Builder, STRIP_PARTS, topColors } from './builder';
+import { Builder, STRIP_PARTS, placeTopper, topColors } from './builder';
 import type { Recipe, RecipeContext } from './types';
 
 type Style = 'giant' | 'cross' | 'stack';
@@ -51,13 +51,7 @@ function layer(b: Builder, style: Style, k: number, y: number, role: string): { 
 }
 
 function addTopper(b: Builder, ctx: RecipeContext): string | null {
-  const options = ctx.rng.shuffle(['figure', 'flower', 'animal']);
-  for (const part of options) {
-    if (!b.has(part)) continue;
-    const color = part === 'flower' ? undefined : null;
-    if (b.placeOn(part, 'deko', { near: [0, 0], color })) return part;
-  }
-  return null;
+  return placeTopper(b, ctx.rng, { near: [0, 0] });
 }
 
 export const tower: Recipe = {
