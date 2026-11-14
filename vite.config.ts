@@ -2,6 +2,12 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Originalmodelle der Standardteile: sofort offline verfügbar (alle anderen nach dem ersten Laden).
+const CORE_MODELS = [
+  '3437', '87084', '3011', '2300', '4199', '2291', '4066a', '31110', '31111', '6474', '70676',
+  '2302b', '98223b', 'x-door', 'x-window', '11198', '18652', '10715', '14639',
+].map((id) => `ldraw/parts/${id}.dpl`);
+
 export default defineConfig({
   // Relative Pfade: die App läuft auf jedem statischen Hosting und in jedem Unterordner.
   base: './',
@@ -10,7 +16,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'ldraw/CREDITS.txt', ...CORE_MODELS],
       manifest: {
         name: 'Duplify – Bauen mit Noppi',
         short_name: 'Duplify',
@@ -32,6 +38,13 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         navigateFallback: 'index.html',
+        runtimeCaching: [
+          {
+            urlPattern: /\/ldraw\/parts\/[^/]+\.dpl$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'duplify-teile', expiration: { maxEntries: 700 } },
+          },
+        ],
       },
     }),
   ],

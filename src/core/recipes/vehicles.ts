@@ -1,5 +1,9 @@
+import { getPart } from '../parts/catalog';
 import { Builder, placeTopper } from './builder';
 import type { Recipe } from './types';
+
+/** Oberkante eines Teils in Halb-Ebenen (z. B. Auto-Basis mit Rädern: 3 = 1½ Steine). */
+const topOf = (part: string, y = 0) => y + getPart(part).h;
 
 /** Auto (Cabrio mit Fahrer) oder Laster mit Ladung – braucht eine Auto-Basis. */
 export const car: Recipe = {
@@ -12,15 +16,16 @@ export const car: Recipe = {
     const b = new Builder(ctx.budget);
     const base = b.has('car-2x6') ? 'car-2x6' : b.has('wagon-2x6') ? 'wagon-2x6' : null;
     if (!base || !b.place(base, 0, 0, 0, 0, 'basis')) return null;
+    const top = topOf(base);
     const truck = ctx.target >= 8;
     if (!truck) {
-      if (!b.place('brick-2x2', 0, 2, 0, 0, 'karosserie')) return null;
+      if (!b.place('brick-2x2', 0, top, 0, 0, 'karosserie')) return null;
       if (b.has('figure')) {
-        b.placeColored('figure', 2, 2, 0, 3, null, 'deko');
-        if (ctx.target >= 6 && b.has('figure')) b.placeColored('figure', 3, 2, 0, 3, null, 'deko');
-      } else b.place('brick-2x2', 2, 2, 0, 0, 'sitz');
-      if (!b.place('slope-2x2', 4, 2, 0, 3, 'karosserie') && !b.place('brick-2x2', 4, 2, 0, 0, 'karosserie')) return null;
-      if (ctx.target >= 5 && b.has('flower')) b.placeOn('flower', 'deko', { near: [1, 1], y: 4 });
+        b.placeColored('figure', 2, top, 0, 3, null, 'deko');
+        if (ctx.target >= 6 && b.has('figure')) b.placeColored('figure', 3, top, 0, 3, null, 'deko');
+      } else b.place('brick-2x2', 2, top, 0, 0, 'sitz');
+      if (!b.place('slope-2x2', 4, top, 0, 3, 'karosserie') && !b.place('brick-2x2', 4, top, 0, 0, 'karosserie')) return null;
+      if (ctx.target >= 5 && b.has('flower')) b.placeOn('flower', 'deko', { near: [1, 1], y: top + 2 });
       return {
         placements: b.placements,
         roles: [
@@ -33,12 +38,13 @@ export const car: Recipe = {
       };
     }
     // Laster: Fahrerhaus vorne, Ladung hinten
-    const cab = b.place('brick-2x2', 4, 2, 0, 0, 'fuehrerhaus') && b.place('brick-2x2', 4, 4, 0, 0, 'fuehrerhaus');
+    const cab = b.place('brick-2x2', 4, top, 0, 0, 'fuehrerhaus') && b.place('brick-2x2', 4, top + 2, 0, 0, 'fuehrerhaus');
     if (!cab) return null;
-    const face = b.place('brick-2x4', 4, 6, -1, 1, 'fuehrerhaus', 'eyes') || b.place('slope-2x2', 4, 6, 0, 3, 'fuehrerhaus');
-    let y = 2;
+    const face =
+      b.place('brick-2x4', 4, top + 4, -1, 1, 'fuehrerhaus', 'eyes') || b.place('slope-2x2', 4, top + 4, 0, 3, 'fuehrerhaus');
+    let y = top;
     let loads = 0;
-    while (b.size < ctx.target - 1 && y < 18) {
+    while (b.size < ctx.target - 1 && y < top + 16) {
       const rot = loads % 2 === 0 ? 0 : 1;
       const ok = rot === 0 ? b.place('brick-2x4', 0, y, 0, 0, 'ladung') : b.place('brick-2x2', 1, y, 0, 0, 'ladung');
       if (!ok && !b.place('brick-2x2', 0, y, 0, 0, 'ladung')) break;
@@ -77,33 +83,37 @@ export const train: Recipe = {
     // Wagen von links nach rechts, dann die Lok
     for (let k = 0; k < wagons; k++) {
       const x = k * 7;
-      if (!b.place(base(), x, 0, 0, 0, 'wagen')) return null;
+      const part = base();
+      if (!b.place(part, x, 0, 0, 0, 'wagen')) return null;
+      const top = topOf(part);
       const kind = ctx.rng.pick(['kisten', 'passagier', 'blumen', 'tier'] as const);
       if (kind === 'passagier' && b.has('figure')) {
-        b.placeColored('figure', x + 1, 2, 0, 0, null, 'deko');
-        b.place('brick-2x2', x + 3, 2, 0, 0, 'ladung');
+        b.placeColored('figure', x + 1, top, 0, 0, null, 'deko');
+        b.place('brick-2x2', x + 3, top, 0, 0, 'ladung');
       } else if (kind === 'blumen' && b.has('flower', null, 2)) {
-        b.place('flower', x, 2, 0, 0, 'deko');
-        b.place('flower', x + 3, 2, 0, 0, 'deko');
+        b.place('flower', x, top, 0, 0, 'deko');
+        b.place('flower', x + 3, top, 0, 0, 'deko');
       } else if (kind === 'tier' && b.has('animal')) {
-        b.placeColored('animal', x + 1, 2, 0, 0, null, 'deko');
+        b.placeColored('animal', x + 1, top, 0, 0, null, 'deko');
       } else {
-        if (!b.place('brick-2x4', x + 1, 2, 0, 0, 'ladung') && !b.place('brick-2x2', x + 2, 2, 0, 0, 'ladung')) return null;
-        b.place('brick-2x2', x + 2, 4, 0, 0, 'ladung');
+        if (!b.place('brick-2x4', x + 1, top, 0, 0, 'ladung') && !b.place('brick-2x2', x + 2, top, 0, 0, 'ladung')) return null;
+        b.place('brick-2x2', x + 2, top + 2, 0, 0, 'ladung');
       }
     }
     // Lok: Führerhaus hinten (links), Kessel vorne (rechts)
     const lx = wagons * 7;
-    if (!b.place(base(), lx, 0, 0, 0, 'lok')) return null;
+    const part = base();
+    if (!b.place(part, lx, 0, 0, 0, 'lok')) return null;
+    const top = topOf(part);
     const ok =
-      b.place('brick-2x2', lx, 2, 0, 0, 'lok') &&
-      b.place('brick-2x2', lx, 4, 0, 0, 'lok') &&
-      b.place('brick-2x2', lx + 2, 2, 0, 0, 'kessel');
+      b.place('brick-2x2', lx, top, 0, 0, 'lok') &&
+      b.place('brick-2x2', lx, top + 2, 0, 0, 'lok') &&
+      b.place('brick-2x2', lx + 2, top, 0, 0, 'kessel');
     if (!ok) return null;
-    const face = b.place('brick-2x4', lx + 4, 2, -1, 1, 'kessel', 'eyes') || b.place('brick-2x2', lx + 4, 2, 0, 0, 'kessel');
+    const face = b.place('brick-2x4', lx + 4, top, -1, 1, 'kessel', 'eyes') || b.place('brick-2x2', lx + 4, top, 0, 0, 'kessel');
     if (!face) return null;
-    if (!b.place('tall-1x2', lx + 2, 4, 0, 0, 'schornstein')) b.place('brick-2x2', lx + 2, 4, 0, 0, 'schornstein');
-    if (!b.place('slope-2x2', lx, 6, 0, 0, 'dach')) b.place('brick-2x2', lx, 6, 0, 0, 'dach');
+    if (!b.place('tall-1x2', lx + 2, top + 2, 0, 0, 'schornstein')) b.place('brick-2x2', lx + 2, top + 2, 0, 0, 'schornstein');
+    if (!b.place('slope-2x2', lx, top + 4, 0, 0, 'dach')) b.place('brick-2x2', lx, top + 4, 0, 0, 'dach');
     return {
       placements: b.placements,
       roles: [
@@ -120,7 +130,7 @@ export const train: Recipe = {
   },
 };
 
-/** Rakete: Flossen unten, gestreifter Rumpf, spitze Nase und ein Astronaut obendrauf. */
+/** Rakete: zwei Flossen, darüber eine „Düse“, gestreifter Rumpf, spitze Nase und ein Astronaut. */
 export const rocket: Recipe = {
   id: 'rakete',
   category: 'fantasie',
@@ -129,15 +139,16 @@ export const rocket: Recipe = {
   min: 7,
   generate(ctx) {
     const b = new Builder(ctx.budget);
-    const fins =
-      b.place('brick-2x2', 0, 0, 0, 0, 'rumpf') &&
-      (b.place('slope-2x2', -2, 0, 0, 1, 'flossen') || b.place('brick-2x2', -2, 0, 0, 0, 'flossen')) &&
-      (b.place('slope-2x2', 2, 0, 0, 3, 'flossen') || b.place('brick-2x2', 2, 0, 0, 0, 'flossen'));
+    // Beide Flossen gleich hoch: zwei Dachsteine (1½ hoch) oder zwei kleine Steine.
+    const fins = b.has('slope-2x2', null, 2)
+      ? b.place('slope-2x2', -2, 0, 0, 1, 'flossen') && b.place('slope-2x2', 2, 0, 0, 3, 'flossen')
+      : b.place('brick-2x2', -2, 0, 0, 0, 'flossen') && b.place('brick-2x2', 2, 0, 0, 0, 'flossen');
     if (!fins) return null;
-    if (!b.place('brick-2x4', -1, 2, 0, 0, 'rumpf')) return null;
+    const finTop = topOf(b.placements[0].part);
+    if (!b.place('brick-2x4', -1, finTop, 0, 0, 'rumpf')) return null;
     const noseParts = 4;
     const body = Math.max(1, Math.min(24, ctx.target - b.size - noseParts));
-    let y = 4;
+    let y = finTop + 2;
     for (let k = 0; k < body; k++, y += 2) {
       if (!b.place('brick-2x2', 0, y, 0, 0, 'rumpf') && !b.place('brick-2x3', 0, y, 0, 0, 'rumpf')) {
         if (k === 0) return null;
@@ -146,9 +157,10 @@ export const rocket: Recipe = {
     }
     if (!b.place('brick-2x4', -1, y, 0, 0, 'spitze')) return null;
     y += 2;
+    const start = b.size;
     const nose = b.place('slope-2x2', -1, y, 0, 1, 'spitze') && b.place('slope-2x2', 1, y, 0, 3, 'spitze');
     if (!nose) {
-      b.rollback(b.size - (b.placements[b.placements.length - 1]?.y === y ? 1 : 0));
+      b.rollback(start);
       b.place('brick-2x2', 0, y, 0, 0, 'spitze');
     }
     placeTopper(b, ctx.rng, { options: ['figure', 'flower'] });

@@ -44,6 +44,25 @@ export class ShapeBudget {
   customParts(): PartId[] {
     return [...this.left.entries()].filter(([k, n]) => k.startsWith('custom-') && n > 0).map(([k]) => k);
   }
+
+  /** Vorhandene weitere Originalteile aus dem Katalog (`ld-…`). */
+  catalogParts(): PartId[] {
+    return [...this.left.entries()].filter(([k, n]) => k.startsWith('ld-') && n > 0 && hasPart(k)).map(([k]) => k);
+  }
+}
+
+/** Originalteil, das sich wie ein Stein stapeln lässt (Noppen oben überall, nicht zu groß). */
+export function isStackable(part: PartId): boolean {
+  if (!hasPart(part)) return false;
+  const d = getPart(part);
+  return (d.kind === 'brick' || d.kind === 'plate') && d.studs === 'all' && !d.groundOnly && d.w * d.l <= 16 && d.h <= 6 && d.w >= 2;
+}
+
+/** Originalteil, das gut obendrauf passt (ohne Noppen oben, kleine Grundfläche). */
+export function isTopper(part: PartId): boolean {
+  if (!hasPart(part)) return false;
+  const d = getPart(part);
+  return !d.groundOnly && d.w * d.l <= 16 && (d.studs === 'none' || d.kind === 'deco');
 }
 
 /** Stein-Längen für 2 Noppen breite Streifen (Teil-ID je Länge). */
@@ -244,7 +263,8 @@ export function placeTopper(
   rng: { shuffle<T>(items: readonly T[]): T[] },
   opts: { near?: [number, number]; y?: number; options?: PartId[] } = {},
 ): PartId | null {
-  const options = rng.shuffle([...(opts.options ?? ['figure', 'flower', 'animal']), ...b.budget.customParts()]);
+  const own = [...b.budget.customParts(), ...b.budget.catalogParts().filter(isTopper)];
+  const options = rng.shuffle([...(opts.options ?? ['figure', 'flower', 'animal']), ...own]);
   for (const part of options) {
     if (!b.has(part)) continue;
     const def = getPart(part);

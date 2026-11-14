@@ -996,8 +996,16 @@
 .inv-add:active {
   transform: scale(0.94);
 }
-.inv-add img,
-.inv-img-ph {
+.part-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+.part-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.inv-img {
   width: 110px;
   height: 110px;
 }
@@ -1006,6 +1014,16 @@
   font-weight: 600;
   text-align: center;
   min-height: 2.2em;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.inv-nr {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
 }
 .inv-plus {
   position: absolute;
@@ -1057,11 +1075,120 @@
 .inv-list-row:last-child {
   border-bottom: 0;
 }
+.inv-list-img {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+}
+.inv-heading {
+  grid-column: 1 / -1;
+  padding: 10px 4px 0;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.inv-empty {
+  grid-column: 1 / -1;
+}
+
+/* Suche und Reiter der Steine-Kiste */
+.inv-search {
+  position: relative;
+  width: min(640px, 100%);
+  margin: 8px auto 0;
+}
+.inv-search input {
+  width: 100%;
+  padding: 12px 48px 12px 18px;
+  border: 3px solid #dbe5f1;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.05rem;
+  outline: none;
+}
+.inv-search input:focus {
+  border-color: var(--blue);
+}
+.inv-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.inv-search-clear {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #eef3f9;
+  color: var(--ink);
+  font-weight: 700;
+}
+.inv-groups {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  padding: 4px 4px 8px;
+  scrollbar-width: none;
+}
+.inv-groups::-webkit-scrollbar {
+  display: none;
+}
+.inv-groups .seg {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (min-width: 900px) {
+  .inv-groups {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow: visible;
+  }
+}
+.seg-count {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #eef3f9;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.seg.active .seg-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
 .dot {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.12);
+}
+
+/* Über & Lizenzen */
+.about {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+.about-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px 22px;
+  line-height: 1.5;
+}
+.about-card h2,
+.about-card p {
+  margin: 0;
+}
+.about-card h2 {
+  font-size: 1.2rem;
+}
+.about-card a {
+  color: var(--blue-dark);
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 /* Eigene Teile */
@@ -1309,5 +1436,32 @@
     width: 34px;
     height: 40px;
     font-size: 1.35rem;
+  }
+}
+
+/* ===== Laden der Originalmodelle ===== */
+.models-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.thumb-wait {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #eef3f9 0%, #f8fbff 50%, #eef3f9 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
   }
 }

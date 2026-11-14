@@ -4,6 +4,7 @@ import { useHistory } from '../../../state/historyStore';
 import { useInventory } from '../../../state/inventoryStore';
 import { BrickButton } from '../../components/BrickButton';
 import { IconHome } from '../../components/icons';
+import { About } from './About';
 import { Backup } from './Backup';
 import { CustomParts } from './CustomParts';
 import { InventoryEditor } from './InventoryEditor';
@@ -16,6 +17,7 @@ export function ParentArea() {
       <Route path="/eigene" component={CustomParts} />
       <Route path="/einstellungen" component={SettingsScreen} />
       <Route path="/sicherung" component={Backup} />
+      <Route path="/lizenzen" component={About} />
       <Route component={ParentMenu} />
     </Switch>
   );
@@ -70,6 +72,11 @@ function ParentMenu() {
             <span className="tile-emoji">💾</span>
             <span className="tile-title">Datensicherung</span>
             <span className="tile-sub">{builds.length} Bauwerke · Export &amp; Import</span>
+          </button>
+          <button className="parent-tile card" onClick={() => navigate('/lizenzen')} data-testid="to-about">
+            <span className="tile-emoji">ℹ️</span>
+            <span className="tile-title">Über &amp; Lizenzen</span>
+            <span className="tile-sub">3D-Teile: LDraw.org (CC BY 4.0)</span>
           </button>
         </div>
         {total === 0 && (

@@ -333,6 +333,40 @@ export function smileGeometry(r: number, tube: number): THREE.BufferGeometry {
   });
 }
 
+/** Rumpf einer Duplo-Figur: unten breiter, runde Schultern, ovaler Querschnitt (Höhe 1). */
+export function figureTorsoGeometry(): THREE.BufferGeometry {
+  return cachedGeometry('figure-torso', () => {
+    const profile = [
+      [0, 0],
+      [0.5, 0],
+      [0.5, 0.06],
+      [0.47, 0.55],
+      [0.43, 0.8],
+      [0.37, 0.92],
+      [0.24, 0.985],
+      [0, 1],
+    ].map(([r, y]) => new THREE.Vector2(r, y));
+    const g = new THREE.LatheGeometry(profile, 28);
+    g.scale(1, 1, 0.66);
+    g.computeVertexNormals();
+    return g;
+  });
+}
+
+/** C-förmige Greifhand (Öffnung zeigt nach +z). */
+export function figureHandGeometry(): THREE.BufferGeometry {
+  return cachedGeometry('figure-hand', () => {
+    const g = new THREE.TorusGeometry(0.1, 0.085, 10, 18, Math.PI * 1.45);
+    // Öffnung nach vorne drehen: Torus liegt in der xy-Ebene, Lücke bei Winkel 1.45π…2π.
+    g.rotateZ(Math.PI * 0.275 + Math.PI / 2);
+    // Ring waagerecht legen (Loch senkrecht wie bei der echten Figur) und kräftiger machen.
+    g.rotateX(Math.PI / 2);
+    g.scale(1, 1.6, 1);
+    g.computeVertexNormals();
+    return g;
+  });
+}
+
 /** Grundplatte mit Noppen als eine Geometrie (Platte) – Noppen kommen per Instancing. */
 export function baseplateGeometry(w: number, l: number): THREE.BufferGeometry {
   return cachedGeometry(`baseplate:${w}:${l}`, () => roundedBox(w - 0.04, 0.24, l - 0.04, 0.08).translate(0, -0.12, 0));

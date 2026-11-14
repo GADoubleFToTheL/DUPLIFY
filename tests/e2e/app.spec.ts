@@ -59,6 +59,37 @@ test('Steine-Kiste: Antippen zählt hoch und bleibt nach dem Neuladen', async ({
   await expect(page.getByTestId('inv-total')).toHaveText('3 Teile in der Kiste');
 });
 
+test('Steine-Kiste: kompletten Katalog durchsuchen und Originalteile eintragen', async ({ page }) => {
+  await fresh(page);
+  await page.goto('/#/eltern/kiste');
+  // Suche (deutsch + Maße) findet den großen Bogen
+  await page.getByTestId('inv-search').fill('Bogen 2 x 10');
+  const arch = page.getByTestId('tile-ld-51704');
+  await expect(arch).toBeVisible();
+  await arch.locator('.inv-add').click();
+  await expect(arch.getByTestId('count')).toHaveText('1');
+  // Kategorie „Platten“
+  await page.getByTestId('inv-search').fill('');
+  await page.getByTestId('inv-cat-platten').click();
+  await page.locator('[data-testid=tile-ld-40666] .inv-add').click();
+  await expect(page.getByTestId('inv-total')).toHaveText('2 Teile in der Kiste');
+  // Übersicht zeigt beide
+  await page.getByTestId('inv-cat-liste').click();
+  await expect(page.locator('.inv-list-row')).toHaveCount(2);
+  await expect(page.locator('.inv-list')).toContainText('Platte 2 x 4');
+});
+
+test('Über & Lizenzen nennt die LDraw-Bibliothek und alle Autoren', async ({ page }) => {
+  await fresh(page);
+  await page.goto('/#/eltern/lizenzen');
+  await expect(page.getByTestId('about')).toContainText('LDraw.org Parts Library');
+  await expect(page.getByTestId('about')).toContainText('CC BY 4.0');
+  const href = await page.getByTestId('credits-link').getAttribute('href');
+  const res = await page.request.get(new URL(href!, page.url()).toString());
+  expect(res.ok()).toBe(true);
+  expect(await res.text()).toContain('Autorinnen und Autoren');
+});
+
 test('Ablauf: Beispiel-Kiste → Idee → bauen → fertig → Meine Bauwerke', async ({ page }) => {
   await fresh(page);
   await page.getByTestId('go-ideas').click();

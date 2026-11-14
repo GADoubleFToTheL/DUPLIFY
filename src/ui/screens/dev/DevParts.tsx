@@ -1,12 +1,13 @@
 import { OrbitControls } from '@react-three/drei';
 import { useMemo, useState } from 'react';
 import { COLORS } from '../../../core/colors';
-import { PARTS, getPart } from '../../../core/parts/catalog';
+import { PARTS, allParts, getPart } from '../../../core/parts/catalog';
 import type { ColorId, Placement, Print } from '../../../core/types';
 import { CreationModel } from '../../../three/CreationModel';
 import { Ground } from '../../../three/Ground';
 import { Scene3D } from '../../../three/Scene3D';
-import { useThumbnail } from '../../../three/useThumbnail';
+import { ModelsGate } from '../../components/ModelsGate';
+import { PartThumbnail } from '../../components/PartThumbnail';
 
 interface Item {
   part: string;
@@ -38,38 +39,30 @@ function layout(items: Item[]): Placement[] {
     x += def.w + 2;
     rowDepth = Math.max(rowDepth, def.l);
   }
-  z += rowDepth + 3;
-  COLORS.forEach((c, i) => out.push({ part: 'brick-2x4', x: (i % 7) * 5, y: 0, z: z + Math.floor(i / 7) * 3, rot: 0, color: c.id }));
   return out;
 }
 
-function Thumb({ item }: { item: Item }) {
-  const key = `part:${item.part}:${item.color}:${item.print ?? ''}`;
-  const url = useThumbnail(key, () => [{ part: item.part, x: 0, y: 0, z: 0, rot: 0, color: item.color, print: item.print }], {
-    size: 160,
-  });
-  return (
-    <div className="card" style={{ width: 120, padding: 8, textAlign: 'center' }}>
-      {url ? <img src={url} width={104} height={104} alt="" /> : <div style={{ height: 104 }}>…</div>}
-      <div style={{ fontSize: 12 }}>{getPart(item.part).name}</div>
-    </div>
-  );
-}
-
-/** Entwickler-Seite: alle Teile in 3D und als Vorschaubild. */
+/** Entwickler-Seite: die Standardteile in 3D, darunter alle Teile des Katalogs als Vorschaubild. */
 export function DevParts() {
   const placements = useMemo(() => layout(ITEMS), []);
   const [party, setParty] = useState(false);
+  const [query, setQuery] = useState('');
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return allParts().filter((p) => !q || `${p.id} ${p.name} ${p.en ?? ''}`.toLowerCase().includes(q));
+  }, [query]);
   return (
     <div className="screen" style={{ padding: 0 }}>
       <div style={{ flex: 3, position: 'relative' }} data-testid="dev-canvas">
-        <Scene3D camera={{ position: [17, 22, 46], fov: 35 }}>
-          <group position={[-17, 0, -10]}>
-            <CreationModel placements={placements} party={party} />
-          </group>
-          <Ground radius={60} />
-          <OrbitControls target={[0, 0, 0]} makeDefault />
-        </Scene3D>
+        <ModelsGate placements={placements}>
+          <Scene3D camera={{ position: [17, 22, 46], fov: 35 }}>
+            <group position={[-17, 0, -10]}>
+              <CreationModel placements={placements} party={party} />
+            </group>
+            <Ground radius={60} />
+            <OrbitControls target={[0, 0, 0]} makeDefault />
+          </Scene3D>
+        </ModelsGate>
         <button
           className={`brick-btn ${party ? 'c-green' : 'c-purple'}`}
           style={{ position: 'absolute', right: 16, top: 8 }}
@@ -78,9 +71,22 @@ export function DevParts() {
           {party ? 'Party an' : 'Party aus'}
         </button>
       </div>
-      <div className="scroll" style={{ flex: 2, display: 'flex', flexWrap: 'wrap', gap: 10, padding: 12 }}>
-        {ITEMS.map((it, i) => (
-          <Thumb key={i} item={it} />
+      <div style={{ padding: '8px 12px' }}>
+        <input className="text-input" placeholder={`${list.length} Teile – suchen …`} value={query} onChange={(e) => setQuery(e.target.value)} />
+      </div>
+      <div
+        className="scroll"
+        style={{ flex: 2, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10, padding: 12 }}
+      >
+        {list.map((p) => (
+          <div key={p.id} className="card" style={{ padding: 6, textAlign: 'center' }} data-testid={`dev-part-${p.id}`}>
+            <PartThumbnail part={p.id} color={p.colorable ? 'rot' : null} size={160} />
+            <div style={{ fontSize: 11, lineHeight: 1.2 }}>
+              <b>{p.id}</b> · {p.w}×{p.l}×{p.h / 2}
+              <br />
+              {p.name}
+            </div>
+          </div>
         ))}
       </div>
     </div>

@@ -1,0 +1,50 @@
+Duplify – 3D-Modelle der Duplo-Teile
+
+Quelle: LDraw.org Parts Library (https://library.ldraw.org)
+Lizenz: Creative Commons Attribution 4.0 (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/
+Änderungen: in ein kompaktes Binärformat umgewandelt und gedreht/verschoben.
+LEGO® und DUPLO® sind Marken der LEGO Gruppe; Duplify ist nicht mit LEGO verbunden.
+
+Autorinnen und Autoren der verwendeten Teile:
+[PTadmin]
+Alex Taylor [anathema]
+Chris Dee [cwdee]
+Christian Neumann [Wesley]
+Damien Roux [Darats]
+Donald Sutter [technog]
+Duplify (zusammengesetzt aus LDraw-Teilen)
+Franklin W. Cain [fwcain]
+Gerald Lasser [GeraldLasser]
+J.C. Tchang [tchang]
+James Jessiman
+Jeff Jones [notmaster]
+Magnus Forsberg [MagFors]
+Marc Klein [marckl]
+Mark Kennedy [mkennedy]
+Massimo Maso [Sirio]
+Max Martin Richter [MMR1988]
+Michael Heidemann [mikeheide]
+Michal Moc [michalmoc]
+N. W. Perry [Plastikean]
+Niels Bugge [SirBugge]
+Niels Karsdorp [nielsk]
+Orion Pobursky [OrionP]
+Owen Burgoyne [C3POwen]
+Paul Easter [pneaster]
+Paul Schelleman [schellie]
+Peter Blomberg [WUIt]
+Philippe Hurbain [Philo]
+Rene Rechthaler [Blechtaler]
+Rolf Osterthun [Rolf]
+Santeri Piippo [arezey]
+Steffen [Steffen]
+Steve Bliss [sbliss]
+Takeshi Takahashi [RainbowDolphin]
+Tim Gould [timgould]
+Tim Lampmann [L4mpi]
+Tony Hafner [hafhead]
+Tore Eriksson [Tore_Eriksson]
+Travis Cobbs [tcobbs]
+Ulrich Röder [UR]
+Vincent Messenet [Cheenzo]
+Willy Tschager [Holly-Wood]

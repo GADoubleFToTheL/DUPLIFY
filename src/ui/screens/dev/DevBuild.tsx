@@ -4,6 +4,7 @@ import { buildOrder, groupSteps } from '../../../core/steps';
 import { BuildStage } from '../../../three/BuildStage';
 import { Scene3D } from '../../../three/Scene3D';
 import type { StagePhase } from '../../../three/stageAnimator';
+import { ModelsGate } from '../../components/ModelsGate';
 
 /** Entwickler-Seite: Bau-Animation mit einem Beispiel-Bauwerk. */
 export function DevBuild() {
@@ -30,9 +31,11 @@ export function DevBuild() {
   };
   return (
     <div className="screen" style={{ padding: 0 }}>
-      <Scene3D>
-        <BuildStage placements={placements} steps={steps} phase={phase} step={step} onLanded={setLanded} />
-      </Scene3D>
+      <ModelsGate placements={placements}>
+        <Scene3D>
+          <BuildStage placements={placements} steps={steps} phase={phase} step={step} onLanded={setLanded} />
+        </Scene3D>
+      </ModelsGate>
       <div className="row" style={{ position: 'absolute', bottom: 16, left: 16, right: 16, justifyContent: 'space-between' }}>
         <button className="brick-btn c-blue" onClick={back} data-testid="back">
           ◀

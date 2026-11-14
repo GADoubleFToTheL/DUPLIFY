@@ -3,7 +3,7 @@ import { bottomCells, columnKey, footprintSize } from '../grid';
 import { getPart } from '../parts/catalog';
 import type { PartId, Placement, Rot } from '../types';
 import { placeHead } from './animals';
-import { Builder, placeTopper, topColors } from './builder';
+import { Builder, isStackable, placeTopper, topColors } from './builder';
 import type { Recipe } from './types';
 
 /** Burg mit zwei Türmen, Mauer, Tor (Bogen) und Zinnen. */
@@ -274,7 +274,8 @@ export const sculpture: Recipe = {
       const y = ctx.rng.chance(0.7) ? top - 0 : Math.max(2, top - 2 * ctx.rng.int(1, 3));
       const studs = b.studsAt(y);
       if (studs.size === 0) continue;
-      const usable = SCULPT_PARTS.filter((p) => b.has(p));
+      // Eure eigenen Originalteile aus der Kiste dürfen mitspielen.
+      const usable = [...SCULPT_PARTS, ...b.budget.catalogParts().filter(isStackable)].filter((p) => b.has(p));
       if (usable.length === 0) break;
       const part = ctx.rng.pick(usable);
       const rot = (ctx.rng.chance(0.5) ? 0 : 1) as Rot;

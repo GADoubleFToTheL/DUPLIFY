@@ -34,6 +34,11 @@ export function plasticLight(color: ColorId | null, amount = 0.3): THREE.MeshSta
   });
 }
 
+/** Feste Farbe eines Originalmodells (Aufdruck, Reifen …). */
+export function fixedPlastic(hex: string): THREE.MeshStandardMaterial {
+  return cached(`fixed:${hex}`, () => new THREE.MeshStandardMaterial({ color: new THREE.Color(hex), roughness: 0.3, metalness: 0 }));
+}
+
 /** Durchsichtiger „Geisterstein“ für den Zielplatz. */
 export function ghost(color: ColorId | null): THREE.MeshStandardMaterial {
   return cached(`ghost:${color}`, () => {

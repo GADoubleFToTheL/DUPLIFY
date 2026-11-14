@@ -12,17 +12,15 @@ Eine fröhliche Web-App für kleine Baumeister: Ihr tragt eure großen Bausteine
 
 ## Was die App kann
 
-- **Steine-Kiste:** Im Eltern-Bereich Farbe wählen und Teile antippen (+1). Der Katalog hat
-  - Steine von 2x2 bis 2x10 und hohe Steine
-  - Dach- und Rundsteine
-  - Augen- und Bildsteine
-  - Tür, Fenster und Bögen
-  - Auto- und Zug-Basis
-  - Blumen, Figuren, Tiere und Wippe
+- **Originalgetreue Teile:** Alle Steine sehen aus wie die echten. Die 3D-Modelle und Maße stammen aus der [LDraw.org Parts Library](https://library.ldraw.org) (CC BY 4.0), siehe [Originalteile](#originalteile-ldraw).
+- **Steine-Kiste mit dem kompletten Katalog:** Im Eltern-Bereich Farbe wählen und Teile antippen (+1).
+  - Es gibt über 550 Teile: alle Duplo-Teile aus LDraw, inklusive bedruckter Steine.
+  - Ihr findet sie über „Häufige Teile“, über Kategorien (Steine, Platten, Dach & Schrägen, Bögen, Fenster & Türen, Fahrzeuge, Zug, Gebäude, Pflanzen & Zubehör) oder über die **Suche**: deutsch, englisch oder die Teilenummer, z. B. „2x4“, „Bogen“ oder „3011“.
+  - Figuren, Tiere, Wippe und Blume sind gezeichnet, weil es dafür keine Originalmodelle gibt.
 
   Alles andere legt ihr als **eigenes Teil** mit Foto an.
 - **Größen-Regler:** Ihr wählt, wie viele Steine ungefähr verbaut werden: von 3 bis „Alle Steine!“ (Mega-Turm). Das Kind kann auf die Türmchen tippen.
-- **21 Baupläne**, die sich an euren Bestand anpassen:
+- **21 Baupläne**, die sich an euren Bestand anpassen. Die Zufalls-Skulptur verbaut auch weitere stapelbare Originalteile aus eurer Kiste:
 
   | Gruppe | Baupläne |
   |---|---|
@@ -102,6 +100,8 @@ Danach `http://<IP-des-Rechners>:4173` öffnen. Installieren als App geht dort n
 | `npm run e2e` | Ende-zu-Ende-Tests im Browser (Playwright, Tablet und Handy, inkl. Offline) |
 | `npm run lint` / `npm run typecheck` | Code-Prüfung |
 | `npm run icons` | App-Icons neu erzeugen |
+| `npm run ldraw -- <complete.zip>` | Originalteile neu umwandeln (siehe unten) |
+| `npm run ldraw -- --names` | nur die deutschen Teilenamen neu übersetzen |
 
 Prüfseiten für Entwickler:
 - `#/dev/teile` – alle Teile in 3D
@@ -113,14 +113,14 @@ Prüfseiten für Entwickler:
 ```
 src/
   core/        Kernlogik ohne UI (komplett getestet)
-    parts/       Teile-Katalog (Maße aus der Rebrickable-Datenbank)
+    parts/       Teile-Katalog (echte Maße aus LDraw), Suche
     grid.ts      Raster: Noppen und Halb-Ebenen, Drehung
     validate.ts  Überlappung, Halt auf Noppen, Kippen
     steps.ts     Bau-Reihenfolge
     colorSolver  echte Farben aus dem Bestand verteilen
     engine.ts    Ideen erzeugen, Zielgröße treffen, sortieren
     recipes/     21 Baupläne + Baukasten (builder.ts)
-  three/       3D: prozedurale Teile, Bau-Animation, Kamera, Konfetti, Vorschaubilder
+  three/       3D: Originalmodelle laden, gezeichnete Figuren, Bau-Animation, Kamera, Konfetti, Vorschaubilder
   ui/          Seiten (Start, Ideen, Bauen, Galerie, Eltern) und Bausteine der Oberfläche
   audio/       synthetische Töne (Web Audio) und Sprachausgabe (de-DE)
   state/       gespeicherte Daten (zustand + localStorage, Fotos in IndexedDB)
@@ -132,8 +132,36 @@ Technik:
 - vite-plugin-pwa
 - Fredoka (OFL-Schrift)
 
-Töne und Licht werden im Code erzeugt. Die App lädt nichts aus dem Internet nach.
+Töne und Licht werden im Code erzeugt. Die App lädt nichts von fremden Servern; die 3D-Modelle kommen von der eigenen Seite und werden nach dem ersten Laden offline gespeichert.
+
+### Originalteile (LDraw)
+
+Die 3D-Modelle, Maße und Noppen-Positionen aller Teile stammen aus der **LDraw.org Parts Library**:
+- Lizenz: Creative Commons Attribution 4.0 (CC BY 4.0)
+- Namensnennung: In der App unter Eltern-Bereich → „Über & Lizenzen“ und in [`public/ldraw/CREDITS.txt`](public/ldraw/CREDITS.txt). Dort stehen alle Autorinnen und Autoren der verwendeten Teile.
+
+Umwandeln (einmalig; das Ergebnis liegt im Repo):
+
+1. `complete.zip` von <https://library.ldraw.org/library/updates/complete.zip> laden.
+2. Den Konverter starten:
+
+   ```bash
+   node --max-old-space-size=6144 scripts/ldraw/convert.mjs /pfad/zu/complete.zip
+   ```
+
+Der Konverter (`scripts/ldraw/convert.mjs`, Namen in `names.mjs`):
+- **Auswahl:** alle Teile, deren Beschreibung mit „Duplo“ beginnt, dazu Türrahmen mit Tür und Fensterrahmen mit Fenster als zusammengesetzte Teile.
+- **Geometrie:** wird mit dem `LDrawLoader` von three.js gelesen, also mit richtiger Flächen-Ausrichtung und glatten Kanten.
+- **Ausrichtung:** Die Teile werden gedreht (LDraw zählt y nach unten) und auf die Mitte der Grundfläche gesetzt.
+- **Speichern:** je Farbgruppe als kompakte Binärdatei, gzip-gepackt: `public/ldraw/parts/<nummer>.dpl`, zusammen ca. 7,5 MB.
+- **Maße:** Die Noppen (`stud7`) und Röhren (`stud8`) ergeben Grundfläche, Höhe und Noppenfelder für die Bau-Logik.
+- **Katalog:** Alles landet in `src/core/parts/ldraw-catalog.json`, mit deutschen Namen und Kategorien.
+
+In der App:
+- Die Modelle werden erst bei Bedarf geladen.
+- Die Standardteile speichert der Service Worker vorab, alle anderen nach dem ersten Laden (offline nutzbar).
+- Die bekannten Bauplan-Teile (`brick-2x4` usw.) sind in `catalog.ts` mit ihren LDraw-Nummern verknüpft. Alle übrigen Teile heißen `ld-<nummer>`.
 
 ## Hinweis
 
-LEGO® und DUPLO® sind Marken der LEGO Gruppe. Duplify ist ein privates Projekt, nicht mit LEGO verbunden und verwendet keine LEGO-Logos. Für eine öffentliche Veröffentlichung sollte der Name nochmal geprüft werden.
+LEGO® und DUPLO® sind Marken der LEGO Gruppe. Duplify ist ein privates Projekt, nicht mit LEGO verbunden und verwendet keine LEGO-Logos (die LDraw-Modelle haben glatte Noppen). Für eine öffentliche Veröffentlichung sollte der Name nochmal geprüft werden.

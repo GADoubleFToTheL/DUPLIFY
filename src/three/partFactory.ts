@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getPart, type PartDef } from '../core/parts/catalog';
+import { getPart, hasPart, type PartDef } from '../core/parts/catalog';
 import { footprintSize } from '../core/grid';
 import { hashNumbers } from '../core/rng';
 import type { ColorId, Placement } from '../core/types';
@@ -15,6 +15,8 @@ import {
   coneGeometry,
   curvedGeometry,
   cylinderGeometry,
+  figureHandGeometry,
+  figureTorsoGeometry,
   frameGeometry,
   heartGeometry,
   heightOf,
@@ -28,7 +30,8 @@ import {
   vehicleGeometry,
   wheelGeometry,
 } from './geometry';
-import { MAT, flat, ghost, photoMaterial, plastic, plasticLight } from './materials';
+import { getModel, type LoadedModel } from './ldrawGeometry';
+import { MAT, fixedPlastic, flat, ghost, photoMaterial, plastic, plasticLight } from './materials';
 
 export type AnimKind = 'blink' | 'sway' | 'wave' | 'wag' | 'wheel' | 'bob';
 
@@ -112,6 +115,7 @@ function buildBody(def: PartDef, color: ColorId | null, opts: PartObjectOptions,
 
   switch (def.kind) {
     case 'brick':
+    case 'plate':
       g.add(mesh(brickGeometry(def), mat));
       break;
     case 'slope':
@@ -226,53 +230,87 @@ function buildFlower(g: THREE.Group, color: ColorId | null, ghostMode: boolean, 
   head.add(center);
 }
 
+/**
+ * Duplo-Figur nach dem Vorbild der echten (es gibt kein LDraw-Modell): Beinblock mit Mittelrille und
+ * Schuhen, nach unten breiterer Rumpf, angeformte Arme mit C-Händen, großer runder Kopf mit Haarkappe
+ * und aufgedrucktem Gesicht. Passt in 2x1 Noppen und 2½ Steine Höhe.
+ */
 function buildFigure(g: THREE.Group, ghostMode: boolean, seed: number, phase: number) {
   const shirt = ghostMode ? ghost('blau') : plastic(SHIRTS[seed % SHIRTS.length]);
-  const pants = ghostMode ? ghost('blau') : flat(PANTS[(seed >>> 3) % PANTS.length]);
+  const pants = ghostMode ? ghost('blau') : fixedPlastic(PANTS[(seed >>> 3) % PANTS.length]);
+  const shoes = ghostMode ? ghost('schwarz') : fixedPlastic('#2b2f36');
   const skin = ghostMode ? ghost('beige') : MAT.skin();
+  // Schuhe (etwas nach vorne) und zwei Beine, die mit einer feinen Rille aneinanderliegen
+  const feet = mesh(boxGeometry(0.98, 0.2, 0.7, 0.08), shoes);
+  feet.position.set(0, 0.1, 0.03);
+  g.add(feet);
   for (const sx of [-1, 1]) {
-    const leg = mesh(boxGeometry(0.42, 0.95, 0.5, 0.12), pants);
-    leg.position.set(sx * 0.25, 0.475, 0);
+    const leg = mesh(boxGeometry(0.47, 0.8, 0.6, 0.12), pants);
+    leg.position.set(sx * 0.245, 0.58, 0);
     g.add(leg);
   }
-  const torso = mesh(boxGeometry(1.1, 1.0, 0.62, 0.22), shirt);
-  torso.position.y = 1.45;
+  const torso = mesh(figureTorsoGeometry(), shirt);
+  torso.position.y = 0.96;
   g.add(torso);
   for (const sx of [-1, 1]) {
     const arm = new THREE.Group();
-    arm.position.set(sx * 0.66, 1.82, 0);
-    const sleeve = mesh(capsuleGeometry(0.13, 0.5), shirt);
-    sleeve.position.y = -0.33;
+    arm.position.set(sx * 0.55, 1.78, 0);
+    const sleeve = mesh(capsuleGeometry(0.135, 0.46), shirt);
+    sleeve.position.y = -0.3;
     arm.add(sleeve);
-    const hand = mesh(sphereGeometry(0.14, 12, 8), skin);
-    hand.position.y = -0.72;
+    const hand = mesh(figureHandGeometry(), skin);
+    hand.position.set(0, -0.7, 0.04);
     arm.add(hand);
     arm.rotation.z = sx * 0.12;
     if (sx > 0) tag(arm, 'wave', phase);
     g.add(arm);
   }
+  const neck = mesh(cylinderGeometry(0.17, 0.19, 0.14, 16), skin);
+  neck.position.y = 2.0;
+  g.add(neck);
   const head = new THREE.Group();
-  head.position.y = 2.42;
+  head.position.y = 2.46;
   g.add(head);
-  head.add(mesh(sphereGeometry(0.48, 24, 16), skin));
-  if (!ghostMode) {
-    const hair = mesh(sphereGeometry(0.51, 24, 12), flat(HAIR[(seed >>> 5) % HAIR.length], { roughness: 0.7 }));
-    hair.scale.set(1, 0.62, 1);
-    hair.position.set(0, 0.16, -0.04);
-    head.add(hair);
-    for (const sx of [-1, 1]) {
-      const e = mesh(sphereGeometry(0.065, 10, 8), MAT.pupil());
-      e.position.set(sx * 0.17, 0.02, 0.44);
-      head.add(e);
-      const cheek = mesh(circleGeometry(0.08, 12), MAT.cheek());
-      cheek.position.set(sx * 0.29, -0.1, 0.405);
-      cheek.rotation.y = sx * 0.55;
-      head.add(cheek);
-    }
-    const smile = mesh(smileGeometry(0.15, 0.028), MAT.pupil());
-    smile.position.set(0, -0.08, 0.445);
-    head.add(smile);
+  head.add(mesh(sphereGeometry(0.47, 28, 20), skin));
+  if (ghostMode) return;
+  const hairColor = HAIR[(seed >>> 5) % HAIR.length];
+  const hair = mesh(sphereGeometry(0.5, 28, 14), fixedPlastic(hairColor));
+  hair.scale.set(1, 0.66, 1);
+  hair.position.set(0, 0.17, -0.05);
+  head.add(hair);
+  // Pony vorne
+  const fringe = mesh(sphereGeometry(0.3, 20, 10), fixedPlastic(hairColor));
+  fringe.scale.set(1.3, 0.38, 0.9);
+  fringe.position.set(-0.04, 0.33, 0.2);
+  fringe.rotation.z = 0.12;
+  head.add(fringe);
+  // Gesicht (aufgedruckt): ovale Augen mit Glanzpunkt, Augenbrauen, Bäckchen, Lächeln
+  const face = new THREE.Group();
+  for (const sx of [-1, 1]) {
+    const eye = new THREE.Group();
+    eye.position.set(sx * 0.16, 0.03, 0.438);
+    const pupil = mesh(sphereGeometry(0.058, 12, 10), MAT.pupil());
+    pupil.scale.set(0.8, 1.15, 0.35);
+    eye.add(pupil);
+    const shine = mesh(sphereGeometry(0.017, 8, 6), MAT.eyeWhite());
+    shine.position.set(0.016, 0.026, 0.02);
+    eye.add(shine);
+    face.add(eye);
+    const brow = mesh(smileGeometry(0.06, 0.012), MAT.pupil());
+    brow.rotation.z = Math.PI;
+    brow.position.set(sx * 0.16, 0.16, 0.425);
+    face.add(brow);
+    const cheek = mesh(circleGeometry(0.07, 14), MAT.cheek());
+    cheek.position.set(sx * 0.28, -0.09, 0.365);
+    cheek.rotation.y = sx * 0.66;
+    face.add(cheek);
   }
+  tag(face.children[0], 'blink', phase);
+  tag(face.children[3], 'blink', phase);
+  const smile = mesh(smileGeometry(0.13, 0.024), MAT.pupil());
+  smile.position.set(0, -0.11, 0.45);
+  face.add(smile);
+  head.add(face);
 }
 
 const ANIMALS = [
@@ -362,6 +400,30 @@ function buildCustom(g: THREE.Group, def: PartDef, ghostMode: boolean, seed: num
   }
 }
 
+/** Originalgetreues Modell (LDraw): Teilfarbe als Plastik, Aufdrucke/Reifen in festen Farben. */
+function buildLdrawBody(model: LoadedModel, def: PartDef, color: ColorId | null, opts: PartObjectOptions): THREE.Group {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.rotation.y = (-(def.ldraw?.rot ?? 0) * Math.PI) / 2;
+  for (const grp of model.groups) {
+    const material = opts.ghost ? ghost(color) : grp.color === null ? plastic(color) : fixedPlastic(grp.color);
+    inner.add(mesh(grp.geometry, material));
+  }
+  g.add(inner);
+  return g;
+}
+
+/** Welche 3D-Modelle ein Bauwerk braucht. */
+export function modelFilesFor(placements: readonly Placement[]): string[] {
+  const files = new Set<string>();
+  for (const p of placements) {
+    if (!hasPart(p.part)) continue;
+    const file = getPart(p.part).ldraw?.file;
+    if (file) files.add(file);
+  }
+  return [...files];
+}
+
 /** Baut das 3D-Objekt eines Teils (lokal: Mitte unten, unrotiert). */
 export function createPartModel(
   partId: string,
@@ -371,7 +433,8 @@ export function createPartModel(
 ): THREE.Group {
   const def = getPart(partId);
   const seed = opts.seed ?? 0;
-  const g = buildBody(def, color, opts, seed);
+  const model = def.ldraw ? getModel(def.ldraw.file) : undefined;
+  const g = model ? buildLdrawBody(model, def, color, opts) : buildBody(def, color, opts, seed);
   if (!opts.ghost) {
     if (print === 'eyes') {
       if (def.kind === 'curved') addEyesBothSides(g, def, heightOf(def) * 0.45, 0.62, 0.28, seed / 7);

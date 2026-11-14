@@ -13,12 +13,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test --trace off",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "ldraw": "node scripts/ldraw/convert.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fredoka": "^5.3.0",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
+    "fflate": "^0.8.3",
     "idb-keyval": "^6.3.0",
     "motion": "^14.14.0",
     "react": "~19.3.1",

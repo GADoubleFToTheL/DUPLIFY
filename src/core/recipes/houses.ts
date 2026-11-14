@@ -79,8 +79,9 @@ export const skyscraper: Recipe = {
       const start = b.size;
       const y0 = f * 6;
       let frame = false;
-      if (f === 0 && b.has('door')) frame = b.place('door', 2, 0, 5, 0, 'tuer');
-      else if (f > 0 && b.has('window')) frame = b.place('window', 2, y0, 5, 0, 'fenster');
+      // Tür- und Fensterrahmen sind 2x4x3 und füllen die Mitte der 2 Noppen dicken Vorderwand.
+      if (f === 0 && b.has('door')) frame = b.place('door', 2, 0, 4, 0, 'tuer');
+      else if (f > 0 && b.has('window')) frame = b.place('window', 2, y0, 4, 0, 'fenster');
       // Ohne Rahmen: eine Fenster-Lücke in einer ungeraden Ebene, damit die Ebene darüber sie überbrückt.
       const holeK = (li + 0) % 2 === 1 ? 0 : 1;
       let ok = true;
@@ -128,7 +129,7 @@ export const house: Recipe = {
   generate(ctx) {
     const b = new Builder(ctx.budget);
     // Pfeiler links und rechts, dazwischen Tür (oder offener Eingang).
-    const door = b.has('door') && b.place('door', 2, 0, 1, 0, 'tuer');
+    const door = b.has('door') && b.place('door', 2, 0, 0, 0, 'tuer');
     const pier = door ? 3 : 2;
     for (let k = 0; k < pier; k++) {
       if (!b.place('brick-2x2', 0, k * 2, 0, 0, 'wand') && !b.place('tall-2x2', 0, k * 2, 0, 0, 'wand')) return null;

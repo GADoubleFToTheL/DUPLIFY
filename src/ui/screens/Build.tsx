@@ -10,6 +10,7 @@ import { useSession } from '../../state/sessionStore';
 import { useSettings } from '../../state/settingsStore';
 import { BuildStage } from '../../three/BuildStage';
 import { Scene3D } from '../../three/Scene3D';
+import { ModelsGate } from '../components/ModelsGate';
 import type { StagePhase } from '../../three/stageAnimator';
 import { BrickButton } from '../components/BrickButton';
 import { IconBack, IconHome, IconNext, IconReplay, IconSound } from '../components/icons';
@@ -127,16 +128,18 @@ function BuildInner({ creation }: { creation: Creation }) {
   return (
     <div className={`screen build build--${phase}`} style={{ padding: 0 }}>
       <div className="build-canvas" data-testid="build-canvas">
-        <Scene3D camera={{ position: [10, 9, 16], fov: 35 }}>
-          <BuildStage
-            placements={creation.placements}
-            steps={steps}
-            phase={phase}
-            step={step}
-            baseplate={settings.baseplate}
-            onLanded={onLanded}
-          />
-        </Scene3D>
+        <ModelsGate placements={creation.placements}>
+          <Scene3D camera={{ position: [10, 9, 16], fov: 35 }}>
+            <BuildStage
+              placements={creation.placements}
+              steps={steps}
+              phase={phase}
+              step={step}
+              baseplate={settings.baseplate}
+              onLanded={onLanded}
+            />
+          </Scene3D>
+        </ModelsGate>
       </div>
 
       <div className="build-top">

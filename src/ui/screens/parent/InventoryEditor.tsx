@@ -1,53 +1,37 @@
-import { useMemo, useState } from 'react';
+import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { play } from '../../../audio/sfx';
-import { COLORS } from '../../../core/colors';
-import { totalParts, variantKey, parseVariantKey } from '../../../core/inventory';
-import { GROUP_LABELS, allParts, getPart, hasPart, type PartDef, type PartGroup } from '../../../core/parts/catalog';
+import { COLORS, COLOR_MAP } from '../../../core/colors';
+import { parseVariantKey, totalParts, variantKey } from '../../../core/inventory';
+import { GROUP_LABELS, getPart, hasPart, partNumber, type PartDef, type PartGroup } from '../../../core/parts/catalog';
+import { catalogVariants, normalizeSearch, searchVariants, variantName, type CatalogVariant } from '../../../core/parts/search';
 import type { ColorId, Print } from '../../../core/types';
 import { useInventory } from '../../../state/inventoryStore';
-import { useThumbnail } from '../../../three/useThumbnail';
 import { IconMinus, IconPlus } from '../../components/icons';
-import { partLabel } from '../../../i18n/speech';
+import { PartThumbnail } from '../../components/PartThumbnail';
 import { ParentTop } from './ParentArea';
 
-const GROUPS: PartGroup[] = ['steine', 'dach', 'fenster', 'fahrzeuge', 'deko'];
+type View = 'haeufig' | PartGroup | 'liste';
 
-interface Variant {
-  def: PartDef;
-  print?: Print;
-}
+const GROUP_ORDER: PartGroup[] = ['steine', 'platten', 'dach', 'boegen', 'fenster', 'fahrzeuge', 'zug', 'gebaeude', 'zubehoer', 'deko', 'eigene'];
 
-function variantsOf(group: PartGroup): Variant[] {
-  const out: Variant[] = [];
-  for (const def of allParts().filter((p) => p.group === group)) {
-    out.push({ def });
-    for (const pr of def.prints ?? []) out.push({ def, print: pr });
-  }
-  return out;
-}
+const keyOf = (v: { def: PartDef; print?: Print }, color: ColorId) => variantKey(v.def.id, v.def.colorable ? color : null, v.print);
 
-function variantName(v: Variant): string {
-  if (v.print === 'eyes') return `${v.def.name} mit Augen`;
-  if (v.print === 'picture') return `${v.def.name} mit Bild`;
-  return v.def.name;
-}
-
-function Tile({ v, color, count, onAdd }: { v: Variant; color: ColorId | null; count: number; onAdd: (d: number) => void }) {
+const Tile = memo(function Tile({ v, color, count, onAdd }: { v: CatalogVariant; color: ColorId; count: number; onAdd: (key: string, d: number) => void }) {
   const c = v.def.colorable ? color : null;
-  const url = useThumbnail(`part:${v.def.id}:${c}:${v.print ?? ''}`, () => [{ part: v.def.id, x: 0, y: 0, z: 0, rot: 0, color: c, print: v.print }], {
-    size: 160,
-  });
+  const nr = partNumber(v.def);
+  const key = keyOf(v, color);
   return (
     <div className={`inv-tile card ${count > 0 ? 'has' : ''}`} data-testid={`tile-${v.def.id}${v.print ? `-${v.print}` : ''}`}>
-      <button className="inv-add" onClick={() => onAdd(1)} aria-label={`${variantName(v)} hinzufügen`}>
-        {url ? <img src={url} alt="" draggable={false} /> : <div className="inv-img-ph" />}
+      <button className="inv-add" onClick={() => onAdd(key, 1)} aria-label={`${variantName(v)} hinzufügen`} title={variantName(v)}>
+        <PartThumbnail part={v.def.id} color={c} print={v.print} size={160} className="inv-img" />
         <span className="inv-name">{variantName(v)}</span>
+        <span className="inv-nr">{nr ? `Nr. ${nr}` : v.def.group === 'eigene' ? 'eigenes Teil' : 'gezeichnet'}</span>
         <span className="inv-plus">
           <IconPlus size={18} />
         </span>
       </button>
       <div className="inv-count-row">
-        <button className="inv-minus" onClick={() => onAdd(-1)} disabled={count === 0} aria-label="eins weniger">
+        <button className="inv-minus" onClick={() => onAdd(key, -1)} disabled={count === 0} aria-label="eins weniger">
           <IconMinus size={18} />
         </button>
         <span className="inv-count" data-testid="count">
@@ -56,17 +40,39 @@ function Tile({ v, color, count, onAdd }: { v: Variant; color: ColorId | null; c
       </div>
     </div>
   );
-}
+});
 
-/** Steine-Kiste: Farbe wählen, Teile antippen (+1). */
+/** Steine-Kiste: Kategorie oder Suche wählen, Farbe wählen, Teile antippen (+1). */
 export function InventoryEditor() {
   const counts = useInventory((s) => s.counts);
+  const custom = useInventory((s) => s.custom);
   const add = useInventory((s) => s.add);
-  const [group, setGroup] = useState<PartGroup | 'liste'>('steine');
+  const [view, setView] = useState<View>('haeufig');
   const [color, setColor] = useState<ColorId>('rot');
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const total = totalParts(counts);
-  const variants = useMemo(() => (group === 'liste' ? [] : variantsOf(group)), [group]);
-  const groupHasColor = variants.some((v) => v.def.colorable);
+
+  // Eigene Teile (custom) ändern den Katalog.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const variants = useMemo(() => catalogVariants(), [custom]);
+  const groupCounts = useMemo(() => {
+    const m = new Map<PartGroup, number>();
+    for (const v of variants) m.set(v.def.group, (m.get(v.def.group) ?? 0) + 1);
+    return m;
+  }, [variants]);
+
+  const searching = normalizeSearch(deferredQuery) !== '';
+  const shown = useMemo(() => {
+    if (normalizeSearch(deferredQuery)) return searchVariants(variants, deferredQuery);
+    if (view === 'liste') return [];
+    if (view === 'haeufig') return variants.filter((v) => v.def.common);
+    return variants.filter((v) => v.def.group === view);
+  }, [variants, view, deferredQuery]);
+  const plain = shown.filter((v) => !(v.def.printed || v.print));
+  const printed = shown.filter((v) => v.def.printed || v.print);
+  const showColors = (searching || view !== 'liste') && shown.some((v) => v.def.colorable);
+
   const perColor = useMemo(() => {
     const m = new Map<ColorId, number>();
     for (const [k, n] of Object.entries(counts)) {
@@ -76,11 +82,19 @@ export function InventoryEditor() {
     return m;
   }, [counts]);
 
-  const change = (v: Variant, d: number) => {
-    const key = variantKey(v.def.id, v.def.colorable ? color : null, v.print);
-    add(key, d);
-    play(d > 0 ? 'pop' : 'tap');
-  };
+  const change = useCallback(
+    (key: string, d: number) => {
+      add(key, d);
+      play(d > 0 ? 'pop' : 'tap');
+    },
+    [add],
+  );
+
+  const tabs: View[] = ['haeufig', ...GROUP_ORDER.filter((g) => (groupCounts.get(g) ?? 0) > 0), 'liste'];
+  const tabLabel = (t: View) => (t === 'haeufig' ? 'Häufige Teile' : t === 'liste' ? 'In der Kiste' : GROUP_LABELS[t]);
+  const tile = (v: CatalogVariant) => (
+    <Tile key={`${v.def.id}-${v.print ?? ''}`} v={v} color={color} count={counts[keyOf(v, color)] ?? 0} onAdd={change} />
+  );
 
   return (
     <div className="screen parent inventory">
@@ -88,17 +102,40 @@ export function InventoryEditor() {
       <div className="inv-summary" data-testid="inv-total">
         {total} Teile in der Kiste
       </div>
-      <div className="inv-groups" role="tablist">
-        {GROUPS.map((g) => (
-          <button key={g} role="tab" aria-selected={group === g} className={`seg ${group === g ? 'active' : ''}`} onClick={() => setGroup(g)}>
-            {GROUP_LABELS[g]}
+      <div className="inv-search">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Suchen: 2x4, Bogen, Tür, 3011 …"
+          aria-label="Teile suchen"
+          data-testid="inv-search"
+          enterKeyHint="search"
+        />
+        {query && (
+          <button className="inv-search-clear" onClick={() => setQuery('')} aria-label="Suche löschen">
+            ✕
           </button>
-        ))}
-        <button role="tab" aria-selected={group === 'liste'} className={`seg ${group === 'liste' ? 'active' : ''}`} onClick={() => setGroup('liste')}>
-          Übersicht
-        </button>
+        )}
       </div>
-      {group !== 'liste' && groupHasColor && (
+      {!searching && (
+        <div className="inv-groups" role="tablist">
+          {tabs.map((t) => (
+            <button
+              key={t}
+              role="tab"
+              aria-selected={view === t}
+              className={`seg ${view === t ? 'active' : ''}`}
+              onClick={() => setView(t)}
+              data-testid={`inv-cat-${t}`}
+            >
+              {tabLabel(t)}
+              {t !== 'haeufig' && t !== 'liste' && <span className="seg-count">{groupCounts.get(t)}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+      {showColors && (
         <div className="inv-colors" role="radiogroup" aria-label="Farbe">
           {COLORS.map((c) => (
             <button
@@ -116,35 +153,51 @@ export function InventoryEditor() {
           ))}
         </div>
       )}
-      <div className="scroll inv-grid">
-        {group === 'liste' ? (
+      <div className="scroll inv-grid" key={searching ? 'suche' : view}>
+        {!searching && view === 'liste' ? (
           <Overview />
+        ) : shown.length === 0 ? (
+          <div className="card parent-hint inv-empty">
+            Nichts gefunden. Tipp: nach Maßen („2x4“), Namen („Bogen“, „Fenster“) oder der Nummer auf dem Teil suchen.
+          </div>
         ) : (
-          variants.map((v) => {
-            const key = variantKey(v.def.id, v.def.colorable ? color : null, v.print);
-            return <Tile key={`${v.def.id}-${v.print ?? ''}-${v.def.colorable ? color : ''}`} v={v} color={color} count={counts[key] ?? 0} onAdd={(d) => change(v, d)} />;
-          })
+          <>
+            {searching && <div className="inv-heading">{shown.length} Treffer</div>}
+            {plain.map(tile)}
+            {printed.length > 0 && (
+              <div className="inv-heading">
+                Mit Aufdruck <span className="subtle">({printed.length})</span>
+              </div>
+            )}
+            {printed.map(tile)}
+          </>
         )}
       </div>
     </div>
   );
 }
 
+/** Alles, was in der Kiste liegt – mit Plus/Minus. */
 function Overview() {
   const counts = useInventory((s) => s.counts);
   const add = useInventory((s) => s.add);
   const entries = Object.entries(counts)
     .filter(([k, n]) => n > 0 && hasPart(parseVariantKey(k).part))
     .sort((a, b) => getPart(parseVariantKey(a[0]).part).order - getPart(parseVariantKey(b[0]).part).order || a[0].localeCompare(b[0]));
-  if (entries.length === 0) return <div className="card parent-hint">Die Kiste ist noch leer.</div>;
+  if (entries.length === 0) return <div className="card parent-hint inv-empty">Die Kiste ist noch leer.</div>;
   return (
     <div className="inv-list card">
       {entries.map(([k, n]) => {
         const { part, color, print } = parseVariantKey(k);
+        const def = getPart(part);
+        const c = color ? COLOR_MAP.get(color) : undefined;
         return (
           <div key={k} className="inv-list-row">
-            <span className="dot" style={{ background: color ? COLORS.find((c) => c.id === color)?.hex : '#ddd' }} />
-            <span className="grow">{partLabel(part, color, print)}</span>
+            <PartThumbnail part={part} color={color} print={print ?? undefined} size={160} className="inv-list-img" />
+            <span className="grow">
+              {variantName({ def, print: print ?? undefined })}
+              {c && <span className="subtle small block">{c.name}</span>}
+            </span>
             <button className="inv-minus" onClick={() => add(k, -1)} aria-label="eins weniger">
               <IconMinus size={16} />
             </button>

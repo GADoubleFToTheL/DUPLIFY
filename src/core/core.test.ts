@@ -115,14 +115,15 @@ describe('Validierung', () => {
     expect(air.some((i) => i.code === 'floating')).toBe(true);
   });
 
-  it('Räder nur auf dem Boden', () => {
+  it('Räder nur auf dem Boden (die Auto-Basis ist 1½ Steine hoch)', () => {
     expect(validate([P('brick-2x4', 0, 0, 0), P('car-2x6', 0, 2, 0)]).some((i) => i.code === 'groundOnly')).toBe(true);
-    expect(isValid([P('car-2x6', 0, 0, 0), P('brick-2x4', 1, 2, 0)])).toBe(true);
+    expect(isValid([P('car-2x6', 0, 0, 0), P('brick-2x4', 1, 3, 0)])).toBe(true);
+    expect(isValid([P('car-2x6', 0, 0, 0), P('brick-2x4', 1, 2, 0)])).toBe(false);
   });
 
-  it('auf der Schräge hält nur die hintere Reihe', () => {
-    expect(isValid([P('slope-2x2', 0, 0, 0), P('brick-2x2', 0, 2, -1)])).toBe(true);
-    expect(isValid([P('slope-2x2', 0, 0, 0), P('brick-2x2', 0, 2, 1)], { checkTipping: false })).toBe(false);
+  it('auf dem Dachstein (1½ hoch) hält nur die hintere Reihe', () => {
+    expect(isValid([P('slope-2x2', 0, 0, 0), P('brick-2x2', 0, 3, -1)])).toBe(true);
+    expect(isValid([P('slope-2x2', 0, 0, 0), P('brick-2x2', 0, 3, 1)], { checkTipping: false })).toBe(false);
   });
 
   it('unter einem Bogen ist Platz, oben drauf hält es', () => {

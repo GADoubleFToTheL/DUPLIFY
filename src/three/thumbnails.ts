@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import type { Placement } from '../core/types';
 import { roomEnvironment } from './environment';
+import { preloadModels } from './ldrawGeometry';
 import { MAT } from './materials';
-import { createCreationGroup } from './partFactory';
+import { createCreationGroup, modelFilesFor } from './partFactory';
 
 /**
  * Vorschaubilder über EINEN geteilten Offscreen-Renderer.
@@ -12,8 +13,30 @@ let renderer: THREE.WebGLRenderer | null = null;
 let scene: THREE.Scene | null = null;
 let camera: THREE.PerspectiveCamera | null = null;
 const cache = new Map<string, string>();
-const pending = new Map<string, Promise<string>>();
-let queue: Promise<unknown> = Promise.resolve();
+
+interface Job {
+  fullKey: string;
+  placements: readonly Placement[];
+  opts: ThumbOptions;
+  promise: Promise<string>;
+  resolve: (url: string) => void;
+  reject: (e: unknown) => void;
+  /** Wie viele Anfragen noch auf das Bild warten (0 → überspringen). */
+  waiters: number;
+  started: boolean;
+}
+
+const jobs = new Map<string, Job>();
+/** Wartende Aufträge: der zuletzt angefragte kommt zuerst dran (beim schnellen Scrollen zählt, was gerade sichtbar ist). */
+const stack: Job[] = [];
+let pumping = false;
+
+/** Ein Vorschaubild wurde nicht mehr gebraucht und deshalb nicht gerendert. */
+export class ThumbnailCancelled extends Error {
+  constructor() {
+    super('Vorschaubild nicht mehr gebraucht');
+  }
+}
 
 export interface ThumbOptions {
   size?: number;
@@ -73,24 +96,67 @@ function renderNow(placements: readonly Placement[], opts: ThumbOptions): string
   return url;
 }
 
-/** Rendert (einmalig, danach aus dem Zwischenspeicher) ein Vorschaubild als Data-URL. */
-export function renderThumbnail(key: string, placements: readonly Placement[], opts: ThumbOptions = {}): Promise<string> {
+/**
+ * Rendert (einmalig, danach aus dem Zwischenspeicher) ein Vorschaubild als Data-URL.
+ * Mit `signal` lässt sich die Anfrage zurückziehen; wartet niemand mehr, wird das Bild übersprungen.
+ */
+export function renderThumbnail(key: string, placements: readonly Placement[], opts: ThumbOptions = {}, signal?: AbortSignal): Promise<string> {
   const fullKey = `${key}@${opts.size ?? 256}`;
   const hit = cache.get(fullKey);
   if (hit) return Promise.resolve(hit);
-  const running = pending.get(fullKey);
-  if (running) return running;
-  const job = queue
-    .then(() => new Promise((r) => setTimeout(r, 0)))
-    .then(() => {
-      const url = renderNow(placements, opts);
-      cache.set(fullKey, url);
-      pending.delete(fullKey);
-      return url;
+  let job = jobs.get(fullKey);
+  if (!job) {
+    let resolve!: (url: string) => void;
+    let reject!: (e: unknown) => void;
+    const promise = new Promise<string>((res, rej) => {
+      resolve = res;
+      reject = rej;
     });
-  queue = job.catch(() => undefined);
-  pending.set(fullKey, job);
-  return job;
+    job = { fullKey, placements, opts, promise, resolve, reject, waiters: 0, started: false };
+    jobs.set(fullKey, job);
+  }
+  if (!job.started) {
+    // Nach oben auf den Stapel: zuletzt angefragt = zuerst gerendert.
+    const i = stack.indexOf(job);
+    if (i >= 0) stack.splice(i, 1);
+    stack.push(job);
+  }
+  job.waiters++;
+  if (signal) {
+    const j = job;
+    signal.addEventListener('abort', () => j.waiters--, { once: true });
+  }
+  void pump();
+  return job.promise;
+}
+
+async function pump(): Promise<void> {
+  if (pumping) return;
+  pumping = true;
+  try {
+    while (stack.length) {
+      const job = stack.pop()!;
+      if (job.waiters <= 0) {
+        jobs.delete(job.fullKey);
+        job.reject(new ThumbnailCancelled());
+        continue;
+      }
+      job.started = true;
+      try {
+        await preloadModels(modelFilesFor(job.placements));
+        await new Promise((r) => setTimeout(r, 0));
+        const url = renderNow(job.placements, job.opts);
+        cache.set(job.fullKey, url);
+        job.resolve(url);
+      } catch (e) {
+        job.reject(e);
+      } finally {
+        jobs.delete(job.fullKey);
+      }
+    }
+  } finally {
+    pumping = false;
+  }
 }
 
 export function cachedThumbnail(key: string, size = 256): string | undefined {
