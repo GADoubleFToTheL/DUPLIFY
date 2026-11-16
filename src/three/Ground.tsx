@@ -26,10 +26,11 @@ export function Ground({ center = [0, 0], baseplate, radius = 40 }: GroundProps)
   );
 }
 
-function Baseplate({ w, l }: { w: number; l: number }) {
+/** Grüne Grundplatte mit Noppen (Oberkante bei y = 0). */
+export function Baseplate({ w, l, color = '#3fae49' }: { w: number; l: number; color?: string }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const plateGeo = useMemo(() => baseplateGeometry(w, l), [w, l]);
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#3fae49', roughness: 0.4 }), []);
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.4 }), [color]);
   useLayoutEffect(() => {
     const m = ref.current;
     if (!m) return;

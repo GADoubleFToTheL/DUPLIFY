@@ -3,7 +3,8 @@ import { useEffect, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { roomEnvironment } from './environment';
 
-function Environment() {
+/** Umgebungslicht für glänzendes Plastik (prozedural, offline). */
+export function PlasticEnvironment() {
   const { gl, scene } = useThree();
   useEffect(() => {
     scene.environment = roomEnvironment(gl);
@@ -38,7 +39,7 @@ export function Scene3D({ children, camera, className, onCreated }: Props) {
       camera={{ position: camera?.position ?? [8, 8, 12], fov: camera?.fov ?? 35, near: 0.1, far: 2000 }}
       onCreated={onCreated}
     >
-      <Environment />
+      <PlasticEnvironment />
       <Lights />
       {children}
     </Canvas>

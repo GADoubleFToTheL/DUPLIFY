@@ -47,6 +47,43 @@ test('Eltern-Sperre öffnet erst nach langem Halten', async ({ page }) => {
   await expect(page.getByTestId('to-inventory')).toBeVisible();
 });
 
+test('Startbildschirm: mit Noppi spielen (antippen, Steine auf den Kopf, Sonne)', async ({ page }) => {
+  await fresh(page);
+  const stage = page.getByTestId('noppi-stage');
+  await expect(stage).toHaveAttribute('data-noppi', /\d+,\d+/);
+  // Noppi plumpst zur Begrüßung erst vom Himmel auf seine Platte
+  await page.waitForTimeout(2500);
+  const [nx, ny] = (await stage.getAttribute('data-noppi'))!.split(',').map(Number);
+  // Noppi antippen → er stellt sich vor
+  await page.mouse.click(nx, ny);
+  await expect(page.getByTestId('noppi-bubble')).toContainText('Ich bin Noppi');
+  // In den Himmel tippen → ein Stein fällt auf Noppis Kopf
+  const box = (await stage.boundingBox())!;
+  await page.mouse.click(box.x + box.width * 0.12, box.y + box.height * 0.35);
+  await expect(stage).toHaveAttribute('data-bricks', '1');
+  // Die Sonne lacht zurück
+  await page.getByTestId('sun').click();
+  await expect(stage).toHaveAttribute('data-last', 'sun');
+});
+
+test('Startbildschirm: auf kleinen Handys ist unten nichts abgeschnitten', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'Handy-Größen');
+  for (const [w, h] of [
+    [375, 548],
+    [360, 640],
+    [390, 664],
+    [844, 390],
+  ]) {
+    await page.setViewportSize({ width: w, height: h });
+    await fresh(page);
+    for (const id of ['go-ideas', 'go-surprise', 'go-gallery', 'parent-lock']) {
+      const b = (await page.getByTestId(id).boundingBox())!;
+      expect(b.y, `${id} bei ${w}x${h}`).toBeGreaterThanOrEqual(0);
+      expect(b.y + b.height, `${id} bei ${w}x${h}`).toBeLessThanOrEqual(h);
+    }
+  }
+});
+
 test('Steine-Kiste: Antippen zählt hoch und bleibt nach dem Neuladen', async ({ page }) => {
   await fresh(page);
   await page.goto('/#/eltern/kiste');

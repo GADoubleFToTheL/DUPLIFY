@@ -1,7 +1,7 @@
 /**
  * Geräusche – komplett synthetisch per Web Audio erzeugt (keine Audiodateien, keine Lizenzen).
  */
-export type Sfx = 'klick' | 'pop' | 'whoosh' | 'fanfare' | 'boing' | 'tap' | 'sparkle';
+export type Sfx = 'klick' | 'pop' | 'whoosh' | 'fanfare' | 'boing' | 'tap' | 'sparkle' | 'giggle' | 'wobble' | 'melody' | 'yawn';
 
 let ctx: AudioContext | null = null;
 let enabled = true;
@@ -89,6 +89,24 @@ export function play(name: Sfx): void {
       break;
     case 'sparkle':
       [1320, 1760, 2093].forEach((f, i) => tone(a, { freq: f, start: i * 0.06, dur: 0.18, gain: 0.08 }));
+      break;
+    case 'giggle':
+      // schnelles „hihihi“: kurze, hüpfende Töne
+      [880, 1046, 932, 1175, 1046].forEach((f, i) => tone(a, { freq: f, to: f * 1.18, start: i * 0.085, dur: 0.07, type: 'triangle', gain: 0.12 }));
+      break;
+    case 'wobble':
+      // wackelndes „uiuiui“
+      [520, 430, 560, 400, 600].forEach((f, i) => tone(a, { freq: f, to: f * 0.8, start: i * 0.09, dur: 0.1, type: 'sine', gain: 0.16 }));
+      break;
+    case 'melody': {
+      // kleines Tanzlied
+      const notes = [523, 587, 659, 523, 659, 784, 659, 523];
+      notes.forEach((f, i) => tone(a, { freq: f, start: i * 0.16, dur: 0.15, type: 'triangle', gain: 0.12 }));
+      break;
+    }
+    case 'yawn':
+      tone(a, { freq: 300, to: 520, dur: 0.35, type: 'sine', gain: 0.14 });
+      tone(a, { freq: 520, to: 220, start: 0.35, dur: 0.6, type: 'sine', gain: 0.12 });
       break;
     case 'fanfare': {
       const notes = [523, 659, 784, 1047];

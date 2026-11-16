@@ -12,6 +12,12 @@ Eine fröhliche Web-App für kleine Baumeister: Ihr tragt eure großen Bausteine
 
 ## Was die App kann
 
+- **Noppi zum Spielen:** Auf dem Startbildschirm steht Noppi in 3D auf einer grünen Bauplatte.
+  - Antippen: ein Kunststück, zum Beispiel Hüpfer, Salto, Pirouette, Tanz oder Kuckuck. Schnell hintereinander antippen kitzelt ihn.
+  - Mit dem Finger drehen: Wer ihn zu wild dreht, macht ihn schwindelig.
+  - In den Himmel tippen: Steine fallen auf seinen Kopf, bis der Turm umkippt.
+  - Die Sonne und die Blumen reagieren auch, und Noppis Augen folgen dem Finger.
+  - Nach einer Weile ohne Tippen schläft er ein.
 - **Originalgetreue Teile:** Alle Steine sehen aus wie die echten. Die 3D-Modelle und Maße stammen aus der [LDraw.org Parts Library](https://library.ldraw.org) (CC BY 4.0), siehe [Originalteile](#originalteile-ldraw).
 - **Steine-Kiste mit dem kompletten Katalog:** Im Eltern-Bereich Farbe wählen und Teile antippen (+1).
   - Es gibt über 550 Teile: alle Duplo-Teile aus LDraw, inklusive bedruckter Steine.
